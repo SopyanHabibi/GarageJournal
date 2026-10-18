@@ -87,4 +87,4 @@ This application strictly adheres to Google's recommended Modern Android Develop
 ## 👤 Author
 
 **Sopyan Habibi**
-* GitHub: [@your-username](https://github.com/your-username)
+* GitHub: [@SopyanHabibi](https://github.com/SopyanHabibi)
