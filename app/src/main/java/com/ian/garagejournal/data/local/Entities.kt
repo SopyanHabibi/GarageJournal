@@ -57,5 +57,5 @@ data class FuelLog(
     val pricePerLiter: Long,
     val totalCost: Long,
     val isFullTank: Boolean,       // penting buat akurasi KM/L
-    val kmPerLiter: Double? = null // dihitung otomatis di repository
+    val kmPerLiter: Double? = null // dihitung ulang otomatis oleh repository, jangan diisi manual
 )

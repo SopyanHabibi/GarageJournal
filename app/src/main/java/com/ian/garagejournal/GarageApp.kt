@@ -15,7 +15,8 @@ class GarageApp : Application() {
             database.vehicleDao(),
             database.serviceLogDao(),
             database.fuelLogDao(),
-            receiptStorage
+            receiptStorage,
+            database
         )
     }
 }

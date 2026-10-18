@@ -55,29 +55,23 @@ interface ServiceLogDao {
 
 @Dao
 interface FuelLogDao {
-    @Query("SELECT * FROM fuel_logs WHERE vehicleId = :vehicleId ORDER BY odometer DESC")
+    @Query("SELECT * FROM fuel_logs WHERE vehicleId = :vehicleId ORDER BY odometer DESC, date DESC, id DESC")
     fun observeByVehicle(vehicleId: Long): Flow<List<FuelLog>>
 
-    @Query("SELECT AVG(kmPerLiter) FROM fuel_logs WHERE vehicleId = :vehicleId AND kmPerLiter IS NOT NULL")
-    fun observeAverageEfficiency(vehicleId: Long): Flow<Double?>
+    @Query("SELECT * FROM fuel_logs WHERE vehicleId = :vehicleId ORDER BY odometer ASC, date ASC, id ASC")
+    suspend fun getAllAscending(vehicleId: Long): List<FuelLog>
 
-    // Isi tangki penuh terakhir sebelum odometer tertentu
-    @Query("""
-        SELECT * FROM fuel_logs
-        WHERE vehicleId = :vehicleId AND isFullTank = 1 AND odometer < :odometer
-        ORDER BY odometer DESC LIMIT 1
-    """)
-    suspend fun getPreviousFullTank(vehicleId: Long, odometer: Int): FuelLog?
-
-    // Total liter pengisian parsial di antara dua titik odometer
-    @Query("""
-        SELECT COALESCE(SUM(liters), 0) FROM fuel_logs
-        WHERE vehicleId = :vehicleId AND odometer > :fromOdo AND odometer < :toOdo
-    """)
-    suspend fun sumLitersBetween(vehicleId: Long, fromOdo: Int, toOdo: Int): Double
+    @Query("SELECT * FROM fuel_logs WHERE id = :id")
+    suspend fun getById(id: Long): FuelLog?
 
     @Insert
     suspend fun insert(log: FuelLog): Long
+
+    @Update
+    suspend fun update(log: FuelLog)
+
+    @Update
+    suspend fun updateAll(logs: List<FuelLog>)
 
     @Delete
     suspend fun delete(log: FuelLog)

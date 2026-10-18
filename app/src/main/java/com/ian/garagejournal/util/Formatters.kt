@@ -25,3 +25,8 @@ fun pickerMillisToLocalMillis(utcMillis: Long): Long =
 fun localMillisToPickerMillis(localMillis: Long): Long =
     Instant.ofEpochMilli(localMillis).atZone(ZoneId.systemDefault()).toLocalDate()
         .atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+
+fun formatEfficiency(value: Double?): String =
+    if (value == null) "-" else String.format(localeId, "%.1f km/L", value)
+
+fun formatLiters(value: Double): String = String.format(localeId, "%.2f L", value)

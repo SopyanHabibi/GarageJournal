@@ -9,6 +9,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.ian.garagejournal.data.local.ReceiptStorage
 import com.ian.garagejournal.data.repository.GarageRepository
+import com.ian.garagejournal.ui.fuel.FuelFormScreen
+import com.ian.garagejournal.ui.fuel.FuelFormViewModel
+import com.ian.garagejournal.ui.fuel.FuelListScreen
+import com.ian.garagejournal.ui.fuel.FuelListViewModel
 import com.ian.garagejournal.ui.service.ServiceFormScreen
 import com.ian.garagejournal.ui.service.ServiceFormViewModel
 import com.ian.garagejournal.ui.service.ServiceListScreen
@@ -59,7 +63,8 @@ fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) 
                 viewModel = viewModel(factory = VehicleDetailViewModel.factory(repository, id)),
                 onBack = { navController.popBackStack() },
                 onEdit = { navController.navigate(Routes.vehicleForm(id)) },
-                onOpenServiceLog = { navController.navigate(Routes.serviceList(id)) }
+                onOpenServiceLog = { navController.navigate(Routes.serviceList(id)) },
+                onOpenFuelLog = { navController.navigate(Routes.fuelList(id)) }
             )
         }
 
@@ -94,6 +99,37 @@ fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) 
                 viewModel = viewModel(
                     factory = ServiceFormViewModel.factory(repository, receiptStorage, vehicleId, logId)
                 ),
+                onDone = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.FUEL_LIST,
+            arguments = listOf(navArgument("vehicleId") { type = NavType.LongType })
+        ) { entry ->
+            val vehicleId = entry.arguments?.getLong("vehicleId") ?: return@composable
+            FuelListScreen(
+                viewModel = viewModel(factory = FuelListViewModel.factory(repository, vehicleId)),
+                onBack = { navController.popBackStack() },
+                onAdd = { navController.navigate(Routes.fuelForm(vehicleId)) },
+                onEdit = { logId -> navController.navigate(Routes.fuelForm(vehicleId, logId)) }
+            )
+        }
+
+        composable(
+            route = Routes.FUEL_FORM,
+            arguments = listOf(
+                navArgument("vehicleId") { type = NavType.LongType },
+                navArgument("logId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
+        ) { entry ->
+            val vehicleId = entry.arguments?.getLong("vehicleId") ?: return@composable
+            val logId = entry.arguments?.getLong("logId") ?: -1L
+            FuelFormScreen(
+                viewModel = viewModel(factory = FuelFormViewModel.factory(repository, vehicleId, logId)),
                 onDone = { navController.popBackStack() }
             )
         }

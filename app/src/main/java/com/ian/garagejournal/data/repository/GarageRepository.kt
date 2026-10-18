@@ -1,18 +1,22 @@
 package com.ian.garagejournal.data.repository
 
+import androidx.room.withTransaction
 import com.ian.garagejournal.data.local.FuelLog
 import com.ian.garagejournal.data.local.FuelLogDao
+import com.ian.garagejournal.data.local.GarageDatabase
 import com.ian.garagejournal.data.local.ReceiptStorage
 import com.ian.garagejournal.data.local.ServiceLog
 import com.ian.garagejournal.data.local.ServiceLogDao
 import com.ian.garagejournal.data.local.Vehicle
 import com.ian.garagejournal.data.local.VehicleDao
+import com.ian.garagejournal.domain.FuelCalculator
 
 class GarageRepository(
     private val vehicleDao: VehicleDao,
     private val serviceLogDao: ServiceLogDao,
     private val fuelLogDao: FuelLogDao,
-    private val receiptStorage: ReceiptStorage
+    private val receiptStorage: ReceiptStorage,
+    private val database: GarageDatabase
 ) {
     // --- Vehicle ---
     fun observeVehicles() = vehicleDao.observeAll()
@@ -47,26 +51,39 @@ class GarageRepository(
 
     // --- Fuel ---
     fun observeFuelLogs(vehicleId: Long) = fuelLogDao.observeByVehicle(vehicleId)
-    fun observeAverageEfficiency(vehicleId: Long) = fuelLogDao.observeAverageEfficiency(vehicleId)
+
+    suspend fun getFuelLog(id: Long) = fuelLogDao.getById(id)
 
     suspend fun addFuelLog(log: FuelLog) {
-        var efficiency: Double? = null
-
-        if (log.isFullTank) {
-            val prevFull = fuelLogDao.getPreviousFullTank(log.vehicleId, log.odometer)
-            if (prevFull != null) {
-                val distance = log.odometer - prevFull.odometer
-                val litersUsed = fuelLogDao.sumLitersBetween(
-                    log.vehicleId, prevFull.odometer, log.odometer
-                ) + log.liters
-                if (distance > 0 && litersUsed > 0) {
-                    efficiency = distance / litersUsed
-                }
-            }
+        database.withTransaction {
+            fuelLogDao.insert(log.copy(kmPerLiter = null))
+            recalculateEfficiency(log.vehicleId)
+            vehicleDao.bumpOdometer(log.vehicleId, log.odometer)
         }
-
-        fuelLogDao.insert(log.copy(kmPerLiter = efficiency))
-        vehicleDao.bumpOdometer(log.vehicleId, log.odometer)
     }
-    suspend fun deleteFuelLog(log: FuelLog) = fuelLogDao.delete(log)
+
+    suspend fun updateFuelLog(log: FuelLog) {
+        database.withTransaction {
+            fuelLogDao.update(log.copy(kmPerLiter = null))
+            recalculateEfficiency(log.vehicleId)
+            vehicleDao.bumpOdometer(log.vehicleId, log.odometer)
+        }
+    }
+
+    suspend fun deleteFuelLog(log: FuelLog) {
+        database.withTransaction {
+            fuelLogDao.delete(log)
+            recalculateEfficiency(log.vehicleId)
+        }
+    }
+
+    // Hitung ulang KM/L untuk SEMUA log motor ini, simpan hanya yang berubah.
+    private suspend fun recalculateEfficiency(vehicleId: Long) {
+        val logs = fuelLogDao.getAllAscending(vehicleId)
+        val results = FuelCalculator.efficiencies(logs)
+        val changed = logs
+            .filter { it.kmPerLiter != results[it.id] }
+            .map { it.copy(kmPerLiter = results[it.id]) }
+        if (changed.isNotEmpty()) fuelLogDao.updateAll(changed)
+    }
 }
