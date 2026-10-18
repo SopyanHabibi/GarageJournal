@@ -35,7 +35,7 @@ data class ServiceLog(
     val title: String,             // mis. "Ganti oli"
     val description: String = "",
     val cost: Long,                // rupiah, pakai Long biar aman
-    val receiptPath: String? = null // path foto nota (diisi di Fase 4)
+    val receiptPath: String? = null // nama file nota di folder receipts
 )
 
 @Entity(

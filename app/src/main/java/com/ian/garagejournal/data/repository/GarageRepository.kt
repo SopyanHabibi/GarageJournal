@@ -1,18 +1,29 @@
 package com.ian.garagejournal.data.repository
 
-import com.ian.garagejournal.data.local.*
+import com.ian.garagejournal.data.local.FuelLog
+import com.ian.garagejournal.data.local.FuelLogDao
+import com.ian.garagejournal.data.local.ReceiptStorage
+import com.ian.garagejournal.data.local.ServiceLog
+import com.ian.garagejournal.data.local.ServiceLogDao
+import com.ian.garagejournal.data.local.Vehicle
+import com.ian.garagejournal.data.local.VehicleDao
 
 class GarageRepository(
     private val vehicleDao: VehicleDao,
     private val serviceLogDao: ServiceLogDao,
-    private val fuelLogDao: FuelLogDao
+    private val fuelLogDao: FuelLogDao,
+    private val receiptStorage: ReceiptStorage
 ) {
     // --- Vehicle ---
     fun observeVehicles() = vehicleDao.observeAll()
     fun observeVehicle(id: Long) = vehicleDao.observeById(id)
     suspend fun addVehicle(v: Vehicle) = vehicleDao.insert(v)
     suspend fun updateVehicle(v: Vehicle) = vehicleDao.update(v)
-    suspend fun deleteVehicle(v: Vehicle) = vehicleDao.delete(v)
+    suspend fun deleteVehicle(v: Vehicle) {
+        val receipts = serviceLogDao.getReceiptPaths(v.id) // ambil dulu sebelum barisnya hilang
+        vehicleDao.delete(v)
+        receipts.forEach { receiptStorage.delete(it) }
+    }
 
     // --- Service ---
     fun observeServiceLogs(vehicleId: Long) = serviceLogDao.observeByVehicle(vehicleId)
@@ -22,8 +33,17 @@ class GarageRepository(
         serviceLogDao.insert(log)
         vehicleDao.bumpOdometer(log.vehicleId, log.odometer)
     }
-    suspend fun updateServiceLog(log: ServiceLog) = serviceLogDao.update(log)
-    suspend fun deleteServiceLog(log: ServiceLog) = serviceLogDao.delete(log)
+    suspend fun getServiceLog(id: Long) = serviceLogDao.getById(id)
+
+    suspend fun updateServiceLog(log: ServiceLog) {
+        serviceLogDao.update(log)
+        vehicleDao.bumpOdometer(log.vehicleId, log.odometer)
+    }
+
+    suspend fun deleteServiceLog(log: ServiceLog) {
+        serviceLogDao.delete(log)
+        receiptStorage.delete(log.receiptPath)
+    }
 
     // --- Fuel ---
     fun observeFuelLogs(vehicleId: Long) = fuelLogDao.observeByVehicle(vehicleId)

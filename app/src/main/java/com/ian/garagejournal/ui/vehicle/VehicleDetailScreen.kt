@@ -2,10 +2,12 @@ package com.ian.garagejournal.ui.vehicle
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -19,14 +21,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ian.garagejournal.ui.vehicle.VehicleDetailViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VehicleDetailScreen(
     viewModel: VehicleDetailViewModel,
     onBack: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    onOpenServiceLog: () -> Unit
 ) {
     val vehicle by viewModel.vehicle.collectAsStateWithLifecycle()
 
@@ -56,10 +58,10 @@ fun VehicleDetailScreen(
                 Text("Plat: ${v.plateNumber}")
                 Text("Odometer: %,d km".format(v.currentOdometer))
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                Text(
-                    "Log Servis dan Log BBM akan ditambahkan di fase berikutnya.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Button(onClick = onOpenServiceLog, modifier = Modifier.fillMaxWidth()) {
+                    Text("Log Servis")
+                }
+                Text("Log BBM akan ditambahkan di fase berikutnya.", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
