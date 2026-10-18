@@ -1,9 +1,10 @@
 package com.ian.garagejournal.data.local
 
-import androidx.room.*
-import com.ian.garagejournal.data.local.FuelLog
-import com.ian.garagejournal.data.local.ServiceLog
-import com.ian.garagejournal.data.local.Vehicle
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -35,6 +36,12 @@ interface ServiceLogDao {
 
     @Query("SELECT COALESCE(SUM(cost), 0) FROM service_logs WHERE vehicleId = :vehicleId")
     fun observeTotalCost(vehicleId: Long): Flow<Long>
+
+    @Query("SELECT * FROM service_logs WHERE id = :id")
+    suspend fun getById(id: Long): ServiceLog?
+
+    @Query("SELECT receiptPath FROM service_logs WHERE vehicleId = :vehicleId AND receiptPath IS NOT NULL")
+    suspend fun getReceiptPaths(vehicleId: Long): List<String>
 
     @Insert
     suspend fun insert(log: ServiceLog): Long
