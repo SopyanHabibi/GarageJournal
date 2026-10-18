@@ -7,12 +7,22 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.ian.garagejournal.ui.navigation.Routes
+import com.ian.garagejournal.data.local.ReceiptStorage
 import com.ian.garagejournal.data.repository.GarageRepository
-import com.ian.garagejournal.ui.vehicle.*
+import com.ian.garagejournal.ui.service.ServiceFormScreen
+import com.ian.garagejournal.ui.service.ServiceFormViewModel
+import com.ian.garagejournal.ui.service.ServiceListScreen
+import com.ian.garagejournal.ui.service.ServiceListViewModel
+import com.ian.garagejournal.ui.vehicle.VehicleDetailScreen
+import com.ian.garagejournal.ui.vehicle.VehicleDetailViewModel
+import com.ian.garagejournal.ui.vehicle.VehicleFormScreen
+import com.ian.garagejournal.ui.vehicle.VehicleFormViewModel
+import com.ian.garagejournal.ui.vehicle.VehicleListScreen
+import com.ian.garagejournal.ui.vehicle.VehicleListViewModel
+
 
 @Composable
-fun GarageNavHost(repository: GarageRepository) {
+fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Routes.VEHICLE_LIST) {
@@ -48,7 +58,43 @@ fun GarageNavHost(repository: GarageRepository) {
             VehicleDetailScreen(
                 viewModel = viewModel(factory = VehicleDetailViewModel.factory(repository, id)),
                 onBack = { navController.popBackStack() },
-                onEdit = { navController.navigate(Routes.vehicleForm(id)) }
+                onEdit = { navController.navigate(Routes.vehicleForm(id)) },
+                onOpenServiceLog = { navController.navigate(Routes.serviceList(id)) }
+            )
+        }
+
+        composable(
+            route = Routes.SERVICE_LIST,
+            arguments = listOf(navArgument("vehicleId") { type = NavType.LongType })
+        ) { entry ->
+            val vehicleId = entry.arguments?.getLong("vehicleId") ?: return@composable
+            ServiceListScreen(
+                viewModel = viewModel(
+                    factory = ServiceListViewModel.factory(repository, receiptStorage, vehicleId)
+                ),
+                onBack = { navController.popBackStack() },
+                onAdd = { navController.navigate(Routes.serviceForm(vehicleId)) },
+                onEdit = { logId -> navController.navigate(Routes.serviceForm(vehicleId, logId)) }
+            )
+        }
+
+        composable(
+            route = Routes.SERVICE_FORM,
+            arguments = listOf(
+                navArgument("vehicleId") { type = NavType.LongType },
+                navArgument("logId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
+        ) { entry ->
+            val vehicleId = entry.arguments?.getLong("vehicleId") ?: return@composable
+            val logId = entry.arguments?.getLong("logId") ?: -1L
+            ServiceFormScreen(
+                viewModel = viewModel(
+                    factory = ServiceFormViewModel.factory(repository, receiptStorage, vehicleId, logId)
+                ),
+                onDone = { navController.popBackStack() }
             )
         }
     }

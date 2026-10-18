@@ -11,10 +11,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val repository = (application as GarageApp).repository
+        val app = application as GarageApp
         setContent {
             GarageJournalTheme {
-                GarageNavHost(repository)
+                GarageNavHost(app.repository, app.receiptStorage)
             }
         }
     }
