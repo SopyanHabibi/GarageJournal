@@ -15,8 +15,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,7 +25,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -41,10 +38,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.ian.garagejournal.ui.components.LocalDatePickerDialog
 import com.ian.garagejournal.util.formatDate
 import com.ian.garagejournal.util.formatRupiah
-import com.ian.garagejournal.util.localMillisToPickerMillis
-import com.ian.garagejournal.util.pickerMillisToLocalMillis
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,22 +149,10 @@ fun ServiceFormScreen(viewModel: ServiceFormViewModel, onDone: () -> Unit) {
     }
 
     if (showDatePicker) {
-        val pickerState = rememberDatePickerState(
-            initialSelectedDateMillis = localMillisToPickerMillis(state.dateMillis)
+        LocalDatePickerDialog(
+            initialMillis = state.dateMillis,
+            onConfirm = viewModel::onDateChange,
+            onDismiss = { showDatePicker = false }
         )
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let {
-                        viewModel.onDateChange(pickerMillisToLocalMillis(it))
-                    }
-                    showDatePicker = false
-                }) { Text("OK") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Batal") }
-            }
-        ) { DatePicker(state = pickerState) }
     }
 }
