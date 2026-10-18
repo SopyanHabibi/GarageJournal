@@ -10,7 +10,6 @@ Built with modern Android development standards, this project demonstrates robus
 | :---: | :---: | :---: | :---: | :---: |
 | <img src="docs/screenshots/vehicle-list-01.jpg" width="160"/> | <img src="docs/screenshots/vehicle-detail-02.jpg" width="160"/> | <img src="docs/screenshots/log-service-list-03.jpg" width="160"/> | <img src="docs/screenshots/log-service-form-04.jpg" width="160"/> | <img src="docs/screenshots/log-fuel-05.jpg" width="160"/> |
 
-> *Note: Store your images inside a `screenshots/` directory at the root of your project.*
 
 ## ✨ Features
 
