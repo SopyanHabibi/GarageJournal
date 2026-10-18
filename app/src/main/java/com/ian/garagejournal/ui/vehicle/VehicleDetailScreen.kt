@@ -28,7 +28,8 @@ fun VehicleDetailScreen(
     viewModel: VehicleDetailViewModel,
     onBack: () -> Unit,
     onEdit: () -> Unit,
-    onOpenServiceLog: () -> Unit
+    onOpenServiceLog: () -> Unit,
+    onOpenFuelLog: () -> Unit
 ) {
     val vehicle by viewModel.vehicle.collectAsStateWithLifecycle()
 
@@ -61,7 +62,9 @@ fun VehicleDetailScreen(
                 Button(onClick = onOpenServiceLog, modifier = Modifier.fillMaxWidth()) {
                     Text("Log Servis")
                 }
-                Text("Log BBM akan ditambahkan di fase berikutnya.", style = MaterialTheme.typography.bodyMedium)
+                Button(onClick = onOpenFuelLog, modifier = Modifier.fillMaxWidth()) {
+                    Text("Log BBM")
+                }
             }
         }
     }
