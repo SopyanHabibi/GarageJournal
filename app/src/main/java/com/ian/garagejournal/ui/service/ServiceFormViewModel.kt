@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ian.garagejournal.data.local.ReceiptStorage
+import com.ian.garagejournal.data.local.Reminder
 import com.ian.garagejournal.data.local.ServiceLog
 import com.ian.garagejournal.data.repository.GarageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,8 @@ data class ServiceFormState(
     val cost: String = "",
     val description: String = "",
     val receiptFileName: String? = null,
+    val reminders: List<Reminder> = emptyList(),
+    val selectedReminderIds: Set<Long> = emptySet(),
     val isEditing: Boolean = false,
     val error: String? = null,
     val saved: Boolean = false
@@ -63,6 +66,8 @@ class ServiceFormViewModel(
                 // Mode tambah: isi odometer dengan odometer motor saat ini
                 repo.observeVehicle(vehicleId).first()?.let { v ->
                     _state.update { it.copy(odometer = v.currentOdometer.toString()) }
+                    val reminders = repo.observeReminders(vehicleId).first()
+                    _state.update { it.copy(reminders = reminders) }
                 }
             }
         }
@@ -73,6 +78,10 @@ class ServiceFormViewModel(
     fun onOdometerChange(v: String) = _state.update { it.copy(odometer = v.filter(Char::isDigit), error = null) }
     fun onCostChange(v: String) = _state.update { it.copy(cost = v.filter(Char::isDigit), error = null) }
     fun onDescriptionChange(v: String) = _state.update { it.copy(description = v) }
+    fun onReminderToggle(id: Long) = _state.update {
+        val next = if (id in it.selectedReminderIds) it.selectedReminderIds - id else it.selectedReminderIds + id
+        it.copy(selectedReminderIds = next)
+    }
 
     // --- Nota ---
     fun receiptFile(fileName: String): File = storage.resolve(fileName)
@@ -136,7 +145,7 @@ class ServiceFormViewModel(
                 cost = cost!!,
                 receiptPath = s.receiptFileName
             )
-            if (base == null) repo.addServiceLog(log) else repo.updateServiceLog(log)
+            if (base == null) repo.addServiceLog(log, s.selectedReminderIds) else repo.updateServiceLog(log)
 
             // Nota lama yang diganti/dihapus -> bersihkan filenya
             if (base?.receiptPath != null && base.receiptPath != s.receiptFileName) {
