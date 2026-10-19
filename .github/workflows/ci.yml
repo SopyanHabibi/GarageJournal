@@ -1,0 +1,37 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Kalau ada push baru ke branch yang sama, batalkan run lama
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ambil kode
+        uses: actions/checkout@v5
+
+      - name: Siapkan JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Siapkan Gradle (dengan cache)
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Beri izin eksekusi gradlew
+        run: chmod +x gradlew
+
+      - name: Jalankan unit test
+        run: ./gradlew testDebugUnitTest
+
+      - name: Build APK debug
+        run: ./gradlew assembleDebug
