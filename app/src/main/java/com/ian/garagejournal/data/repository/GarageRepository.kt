@@ -5,6 +5,7 @@ import com.ian.garagejournal.data.local.FuelLog
 import com.ian.garagejournal.data.local.FuelLogDao
 import com.ian.garagejournal.data.local.GarageDatabase
 import com.ian.garagejournal.data.local.ReceiptStorage
+import com.ian.garagejournal.data.local.Reminder
 import com.ian.garagejournal.data.local.ServiceLog
 import com.ian.garagejournal.data.local.ServiceLogDao
 import com.ian.garagejournal.data.local.Vehicle
@@ -16,8 +17,10 @@ class GarageRepository(
     private val serviceLogDao: ServiceLogDao,
     private val fuelLogDao: FuelLogDao,
     private val receiptStorage: ReceiptStorage,
-    private val database: GarageDatabase
+    private val database: GarageDatabase,
+
 ) {
+    private val reminderDao by lazy { database.reminderDao() }
     // --- Vehicle ---
     fun observeVehicles() = vehicleDao.observeAll()
     fun observeVehicle(id: Long) = vehicleDao.observeById(id)
@@ -33,9 +36,14 @@ class GarageRepository(
     fun observeServiceLogs(vehicleId: Long) = serviceLogDao.observeByVehicle(vehicleId)
     fun observeServiceTotal(vehicleId: Long) = serviceLogDao.observeTotalCost(vehicleId)
 
-    suspend fun addServiceLog(log: ServiceLog) {
-        serviceLogDao.insert(log)
-        vehicleDao.bumpOdometer(log.vehicleId, log.odometer)
+    suspend fun addServiceLog(log: ServiceLog, resetReminderIds: Set<Long> = emptySet()) {
+        database.withTransaction {
+            serviceLogDao.insert(log)
+            vehicleDao.bumpOdometer(log.vehicleId, log.odometer)
+            resetReminderIds.forEach {
+                reminderDao.markDone(it, log.vehicleId, log.odometer, log.date)
+            }
+        }
     }
     suspend fun getServiceLog(id: Long) = serviceLogDao.getById(id)
 
@@ -86,4 +94,14 @@ class GarageRepository(
             .map { it.copy(kmPerLiter = results[it.id]) }
         if (changed.isNotEmpty()) fuelLogDao.updateAll(changed)
     }
+
+    // --- Reminder ---
+    fun observeReminders(vehicleId: Long) = reminderDao.observeByVehicle(vehicleId)
+    suspend fun getReminder(id: Long) = reminderDao.getById(id)
+    suspend fun addReminder(r: Reminder) = reminderDao.insert(r)
+    suspend fun updateReminder(r: Reminder) = reminderDao.update(r)
+    suspend fun deleteReminder(r: Reminder) = reminderDao.delete(r)
+
+    suspend fun markReminderDone(id: Long, vehicleId: Long, odometer: Int, date: Long) =
+        reminderDao.markDone(id, vehicleId, odometer, date)
 }
