@@ -1,26 +1,26 @@
 ![Android CI](https://github.com/SopyanHabibi/GarageJournal/actions/workflows/ci.yml/badge.svg)
-# 🏍️ Garage Journal - Motorcycle Maintenance & Fuel Log
+# Garage Journal - Motorcycle Maintenance & Fuel Log
 
 **Garage Journal** is an offline-first Android application built with Kotlin and Jetpack Compose to help motorcycle owners track maintenance history, manage vehicle profiles, and calculate real-time fuel efficiency (KM/Liter).
 
 Built with modern Android development standards, this project demonstrates robust local data persistence, clean architecture, and reactive UI patterns.
 
-## 📱 App Screenshots
+## App Screenshots
 
 | 01. Vehicle List | 02. Vehicle Detail | 03. Service Log | 04. Add Service Form | 05. Fuel Log |
 | :---: | :---: | :---: | :---: | :---: |
 | <img src="docs/screenshots/vehicle-list-01.jpg" width="160"/> | <img src="docs/screenshots/vehicle-detail-02.jpg" width="160"/> | <img src="docs/screenshots/log-service-list-03.jpg" width="160"/> | <img src="docs/screenshots/log-service-form-04.jpg" width="160"/> | <img src="docs/screenshots/log-fuel-05.jpg" width="160"/> |
 
 
-## ✨ Features
+## Features
 
-* 🛵 **Multi-Vehicle Management:** Track multiple vehicles with initial and current odometer readings.
-* 🔧 **Maintenance & Service Logging:** Keep detailed records of repairs, oil changes, replaced parts, costs, and attached receipt photos.
-* ⛽ **Fuel Tracker & Calculator:** Automatically calculates consumption efficiency (**KM/Liter**) per refuel entry with partial-fill tracking support.
-* 💾 **Offline-First Storage:** Reliable local data storage using Room Database.
-* 📊 **Interactive Dashboard:** Clear overview of overall maintenance expenses and fuel metrics.
+* **Multi-Vehicle Management:** Track multiple vehicles with initial and current odometer readings.
+* **Maintenance & Service Logging:** Keep detailed records of repairs, oil changes, replaced parts, costs, and attached receipt photos.
+* **Fuel Tracker & Calculator:** Automatically calculates consumption efficiency (**KM/Liter**) per refuel entry with partial-fill tracking support.
+* **Offline-First Storage:** Reliable local data storage using Room Database.
+* **Interactive Dashboard:** Clear overview of overall maintenance expenses and fuel metrics.
 
-## 🛠️ Tech Stack & Architecture
+## Tech Stack & Architecture
 
 This application strictly adheres to Google's recommended Modern Android Development (MAD) practices:
 
@@ -31,7 +31,7 @@ This application strictly adheres to Google's recommended Modern Android Develop
 * **Asynchronous & Reactive:** Kotlin Coroutines & `StateFlow` / `SharedFlow`
 * **Navigation:** Jetpack Compose Navigation
 
-## 📐 Database Schema (ERD)
+## Database Schema (ERD)
 
 ```
 +-----------------------+       1 : N       +-----------------------+
@@ -55,7 +55,7 @@ This application strictly adheres to Google's recommended Modern Android Develop
                                             +-----------------------+
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -76,7 +76,7 @@ This application strictly adheres to Google's recommended Modern Android Develop
 
 4. Build and run on an emulator or physical device (Android 8.0+ / API level 26+).
 
-## 📝 Project Roadmap
+## Project Roadmap
 
 * [x] Room Database & Schema Setup
 * [x] Multi-Vehicle CRUD Support
@@ -85,7 +85,7 @@ This application strictly adheres to Google's recommended Modern Android Develop
 * [ ] Export Data to CSV / PDF
 * [ ] Automated Service Reminders (`WorkManager`)
 
-## 👤 Author
+## Author
 
 **Sopyan Habibi**
 * GitHub: [@SopyanHabibi](https://github.com/SopyanHabibi)
