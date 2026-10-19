@@ -59,3 +59,23 @@ data class FuelLog(
     val isFullTank: Boolean,       // penting buat akurasi KM/L
     val kmPerLiter: Double? = null // dihitung ulang otomatis oleh repository, jangan diisi manual
 )
+
+@Entity(
+    tableName = "reminders",
+    foreignKeys = [ForeignKey(
+        entity = Vehicle::class,
+        parentColumns = ["id"],
+        childColumns = ["vehicleId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index("vehicleId")]
+)
+data class Reminder(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val vehicleId: Long,
+    val name: String,               // mis. "Ganti oli"
+    val intervalKm: Int?,           // null = tidak pakai interval jarak
+    val intervalMonths: Int?,       // null = tidak pakai interval waktu
+    val lastDoneOdometer: Int,      // odometer saat terakhir dilakukan
+    val lastDoneDate: Long          // epoch millis
+)

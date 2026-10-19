@@ -76,3 +76,30 @@ interface FuelLogDao {
     @Delete
     suspend fun delete(log: FuelLog)
 }
+
+@Dao
+interface ReminderDao {
+    @Query("SELECT * FROM reminders WHERE vehicleId = :vehicleId ORDER BY name ASC")
+    fun observeByVehicle(vehicleId: Long): Flow<List<Reminder>>
+
+    @Query("SELECT * FROM reminders WHERE id = :id")
+    suspend fun getById(id: Long): Reminder?
+
+    @Insert
+    suspend fun insert(reminder: Reminder): Long
+
+    @Update
+    suspend fun update(reminder: Reminder)
+
+    @Delete
+    suspend fun delete(reminder: Reminder)
+
+    // Syarat odometer: servis lama yang diinput belakangan tidak boleh memundurkan pengingat
+    @Query(
+        """
+        UPDATE reminders SET lastDoneOdometer = :odometer, lastDoneDate = :date
+        WHERE id = :id AND vehicleId = :vehicleId AND lastDoneOdometer <= :odometer
+        """
+    )
+    suspend fun markDone(id: Long, vehicleId: Long, odometer: Int, date: Long)
+}

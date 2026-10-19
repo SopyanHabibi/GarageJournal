@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.ian.garagejournal.data.local.FuelLog
 import com.ian.garagejournal.data.local.GarageDatabase
 import com.ian.garagejournal.data.local.ReceiptStorage
+import com.ian.garagejournal.data.local.Reminder
 import com.ian.garagejournal.data.local.ServiceLog
 import com.ian.garagejournal.data.local.Vehicle
 import com.ian.garagejournal.data.repository.GarageRepository
@@ -171,5 +172,46 @@ class GarageRepositoryTest {
         assertTrue(repo.observeServiceLogs(v).first().isEmpty())
         assertTrue(repo.observeFuelLogs(v).first().isEmpty())
         assertFalse(storage.resolve(receipt).exists())
+    }
+
+    // --- Pengingat ---
+
+    private suspend fun newReminder(vehicleId: Long, lastOdo: Int) = repo.addReminder(
+        Reminder(
+            vehicleId = vehicleId, name = "Ganti oli", intervalKm = 2_000, intervalMonths = null,
+            lastDoneOdometer = lastOdo, lastDoneDate = 0L
+        )
+    )
+
+    @Test
+    fun `servis me-reset pengingat yang dipilih saja`() = runBlocking<Unit> {
+        val v = newVehicle()
+        val chosen = newReminder(v, lastOdo = 8_000)
+        val other = newReminder(v, lastOdo = 8_000)
+
+        repo.addServiceLog(service(v, 10_100, 50_000), setOf(chosen))
+
+        assertEquals(10_100, repo.getReminder(chosen)!!.lastDoneOdometer)
+        assertEquals(8_000, repo.getReminder(other)!!.lastDoneOdometer)
+    }
+
+    @Test
+    fun `servis lama tidak memundurkan pengingat`() = runBlocking<Unit> {
+        val v = newVehicle()
+        val r = newReminder(v, lastOdo = 10_000)
+
+        repo.addServiceLog(service(v, 9_000, 50_000), setOf(r))
+
+        assertEquals(10_000, repo.getReminder(r)!!.lastDoneOdometer)
+    }
+
+    @Test
+    fun `hapus motor ikut menghapus pengingat`() = runBlocking<Unit> {
+        val v = newVehicle()
+        newReminder(v, lastOdo = 8_000)
+
+        repo.deleteVehicle(repo.observeVehicle(v).first()!!)
+
+        assertTrue(repo.observeReminders(v).first().isEmpty())
     }
 }

@@ -3,6 +3,7 @@ package com.ian.garagejournal.ui.service
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
@@ -140,6 +143,21 @@ fun ServiceFormScreen(viewModel: ServiceFormViewModel, onDone: () -> Unit) {
                 TextButton(onClick = viewModel::removeReceipt) { Text("Hapus nota") }
             }
 
+            if (!state.isEditing && state.reminders.isNotEmpty()) {
+                Text("Servis ini me-reset pengingat:", style = MaterialTheme.typography.titleSmall)
+                state.reminders.forEach { r ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable { viewModel.onReminderToggle(r.id) },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = r.id in state.selectedReminderIds,
+                            onCheckedChange = { viewModel.onReminderToggle(r.id) }
+                        )
+                        Text(r.name)
+                    }
+                }
+            }
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
             Button(onClick = viewModel::save, modifier = Modifier.fillMaxWidth()) {

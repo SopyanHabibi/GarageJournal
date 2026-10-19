@@ -13,6 +13,8 @@ import com.ian.garagejournal.ui.fuel.FuelFormScreen
 import com.ian.garagejournal.ui.fuel.FuelFormViewModel
 import com.ian.garagejournal.ui.fuel.FuelListScreen
 import com.ian.garagejournal.ui.fuel.FuelListViewModel
+import com.ian.garagejournal.ui.reminder.ReminderFormScreen
+import com.ian.garagejournal.ui.reminder.ReminderFormViewModel
 import com.ian.garagejournal.ui.service.ServiceFormScreen
 import com.ian.garagejournal.ui.service.ServiceFormViewModel
 import com.ian.garagejournal.ui.service.ServiceListScreen
@@ -64,7 +66,9 @@ fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) 
                 onBack = { navController.popBackStack() },
                 onEdit = { navController.navigate(Routes.vehicleForm(id)) },
                 onOpenServiceLog = { navController.navigate(Routes.serviceList(id)) },
-                onOpenFuelLog = { navController.navigate(Routes.fuelList(id)) }
+                onOpenFuelLog = { navController.navigate(Routes.fuelList(id)) },
+                onAddReminder = { navController.navigate(Routes.reminderForm(id)) },
+                onEditReminder = { reminderId -> navController.navigate(Routes.reminderForm(id, reminderId)) }
             )
         }
 
@@ -130,6 +134,25 @@ fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) 
             val logId = entry.arguments?.getLong("logId") ?: -1L
             FuelFormScreen(
                 viewModel = viewModel(factory = FuelFormViewModel.factory(repository, vehicleId, logId)),
+                onDone = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = Routes.REMINDER_FORM,
+            arguments = listOf(
+                navArgument("vehicleId") { type = NavType.LongType },
+                navArgument("reminderId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
+        ) { entry ->
+            val vehicleId = entry.arguments?.getLong("vehicleId") ?: return@composable
+            val reminderId = entry.arguments?.getLong("reminderId") ?: -1L
+            ReminderFormScreen(
+                viewModel = viewModel(
+                    factory = ReminderFormViewModel.factory(repository, vehicleId, reminderId)
+                ),
                 onDone = { navController.popBackStack() }
             )
         }
