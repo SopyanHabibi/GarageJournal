@@ -1,3 +1,4 @@
+![Android CI](https://github.com/SopyanHabibi/GarageJournal/actions/workflows/ci.yml/badge.svg)
 # 🏍️ Garage Journal - Motorcycle Maintenance & Fuel Log
 
 **Garage Journal** is an offline-first Android application built with Kotlin and Jetpack Compose to help motorcycle owners track maintenance history, manage vehicle profiles, and calculate real-time fuel efficiency (KM/Liter).
