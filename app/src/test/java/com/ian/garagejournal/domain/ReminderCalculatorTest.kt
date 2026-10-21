@@ -88,4 +88,27 @@ class ReminderCalculatorTest {
         assertNull(s.kmRemaining)
         assertNull(s.daysRemaining)
     }
+
+    @Test
+    fun `perkiraan hari dari rata-rata pemakaian memajukan status mendekati`() {
+        // sisa 1.000 km, 100 km per hari = 10 hari (<= 14 hari)
+        val s = ReminderCalculator.status(reminder(), 11_000, day(2026, 1, 2), zone, avgKmPerDay = 100.0)
+        assertEquals(10, s.estimatedDays)
+        assertEquals(ReminderLevel.DUE_SOON, s.level)
+    }
+
+    @Test
+    fun `pemakaian ringan tidak memajukan status`() {
+        // sisa 1.000 km, 20 km per hari = 50 hari
+        val s = ReminderCalculator.status(reminder(), 11_000, day(2026, 1, 2), zone, avgKmPerDay = 20.0)
+        assertEquals(50, s.estimatedDays)
+        assertEquals(ReminderLevel.OK, s.level)
+    }
+
+    @Test
+    fun `tanpa data pemakaian atau sudah lewat batas tidak ada perkiraan`() {
+        assertNull(status(reminder(), 11_000).estimatedDays)
+        val over = ReminderCalculator.status(reminder(), 12_500, day(2026, 1, 2), zone, avgKmPerDay = 100.0)
+        assertNull(over.estimatedDays)
+    }
 }
