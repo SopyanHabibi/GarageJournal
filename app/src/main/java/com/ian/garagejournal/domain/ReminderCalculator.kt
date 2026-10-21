@@ -5,7 +5,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
-enum class ReminderLevel { OK, DUE_SOON, OVERDUE } // urutan = tingkat keparahan
+enum class ReminderLevel(val code: Int) { OK(0), DUE_SOON(1), OVERDUE(2) } // urutan = tingkat keparahan
 
 data class ReminderStatus(
     val level: ReminderLevel,

@@ -17,8 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.ian.garagejournal.domain.ReminderLevel
-import com.ian.garagejournal.domain.ReminderStatus
 import com.ian.garagejournal.domain.ReminderWithStatus
+import com.ian.garagejournal.domain.summaryText
 
 @Composable
 fun ReminderCard(
@@ -69,21 +69,3 @@ private fun levelLabel(level: ReminderLevel): String = when (level) {
     ReminderLevel.OVERDUE -> "Jatuh tempo"
 }
 
-private fun ReminderStatus.summaryText(): String {
-    val parts = mutableListOf<String>()
-    kmRemaining?.let {
-        parts += when {
-            it > 0 -> "${"%,d".format(it)} km lagi"
-            it == 0 -> "tepat di batas km"
-            else -> "lewat ${"%,d".format(-it)} km"
-        }
-    }
-    daysRemaining?.let {
-        parts += when {
-            it > 0 -> "$it hari lagi"
-            it == 0 -> "jatuh tempo hari ini"
-            else -> "lewat ${-it} hari"
-        }
-    }
-    return parts.joinToString(" • ")
-}
