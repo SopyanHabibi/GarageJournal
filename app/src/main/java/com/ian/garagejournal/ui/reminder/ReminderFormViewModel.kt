@@ -20,6 +20,7 @@ data class ReminderFormState(
     val intervalMonths: String = "",
     val lastDoneOdometer: String = "",
     val lastDoneDateMillis: Long = System.currentTimeMillis(),
+    val saving: Boolean = false,
     val isEditing: Boolean = false,
     val error: String? = null,
     val saved: Boolean = false
@@ -68,6 +69,8 @@ class ReminderFormViewModel(
     private fun fail(message: String) = _state.update { it.copy(error = message) }
 
     fun save() {
+        if (_state.value.saving) return // cegah simpan ganda
+
         val s = _state.value
         val name = s.name.trim()
         if (name.isEmpty()) return fail("Nama pengingat wajib diisi")
@@ -88,6 +91,8 @@ class ReminderFormViewModel(
             return fail("Tanggal terakhir tidak boleh di masa depan")
         }
 
+        _state.update { it.copy(saving = true, error = null) }
+
         viewModelScope.launch {
             val base = original
             val reminder = base?.copy(
@@ -105,6 +110,7 @@ class ReminderFormViewModel(
                 lastDoneDate = s.lastDoneDateMillis
             )
             if (base == null) repo.addReminder(reminder) else repo.updateReminder(reminder)
+            _state.update { it.copy(saved = true) } // baris ini yang menutup form, jangan sampai hilang
         }
     }
 
