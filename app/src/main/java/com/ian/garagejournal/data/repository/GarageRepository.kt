@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.ian.garagejournal.data.local.FuelLog
 import com.ian.garagejournal.data.local.FuelLogDao
 import com.ian.garagejournal.data.local.GarageDatabase
+import com.ian.garagejournal.data.local.OdometerPoint
 import com.ian.garagejournal.data.local.ReceiptStorage
 import com.ian.garagejournal.data.local.Reminder
 import com.ian.garagejournal.data.local.ServiceLog
@@ -11,10 +12,15 @@ import com.ian.garagejournal.data.local.ServiceLogDao
 import com.ian.garagejournal.data.local.Vehicle
 import com.ian.garagejournal.data.local.VehicleDao
 import com.ian.garagejournal.domain.FuelCalculator
+import com.ian.garagejournal.domain.OdometerStalePolicy
 import com.ian.garagejournal.domain.ReminderCalculator
 import com.ian.garagejournal.domain.ReminderLevel
 import com.ian.garagejournal.domain.ReminderNotificationPolicy
 import com.ian.garagejournal.domain.ReminderNotifier
+import com.ian.garagejournal.domain.UsageEstimator
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 
 class GarageRepository(
     private val vehicleDao: VehicleDao,
@@ -31,10 +37,13 @@ class GarageRepository(
     fun observeVehicle(id: Long) = vehicleDao.observeById(id)
     suspend fun addVehicle(v: Vehicle) = vehicleDao.insert(v)
     suspend fun updateVehicle(v: Vehicle) {
-        vehicleDao.update(v)
+        val old = vehicleDao.getById(v.id)
+        val stamped = if (old != null && old.currentOdometer != v.currentOdometer) {
+            v.copy(odometerUpdatedAt = System.currentTimeMillis(), staleNotifiedAt = 0L, staleNotifyCount = 0)
+        } else v
+        vehicleDao.update(stamped)
         checkReminders(v.id)
     }
-
     suspend fun deleteVehicle(v: Vehicle) {
         val receipts = serviceLogDao.getReceiptPaths(v.id)
         val reminderIds = reminderDao.getByVehicle(v.id).map { it.id }
@@ -145,16 +154,55 @@ class GarageRepository(
     suspend fun snoozeReminder(id: Long, until: Long) = reminderDao.setSnoozedUntil(id, until)
 
     /** Hitung ulang status semua pengingat motor ini; kirim notifikasi kalau levelnya naik. */
+    /** Titik (tanggal, odometer) dari log BBM dan servis, untuk memperkirakan pemakaian harian. */
+    fun observeUsagePoints(vehicleId: Long): Flow<List<OdometerPoint>> = combine(
+        fuelLogDao.observeOdometerPoints(vehicleId),
+        serviceLogDao.observeOdometerPoints(vehicleId)
+    ) { fuel, service -> fuel + service }
+
+    /** Dipanggil setelah data berubah (kamu sedang aktif di app). */
     suspend fun checkReminders(vehicleId: Long) {
         val vehicle = vehicleDao.getById(vehicleId) ?: return
-        val now = System.currentTimeMillis()
-        for (r in reminderDao.getByVehicle(vehicleId)) {
-            val status = ReminderCalculator.status(r, vehicle.currentOdometer, now)
-            val decision = ReminderNotificationPolicy.onDataChanged(r, status.level, now)
+        notifier.cancelStale(vehicle.id)
+        val reminders = reminderDao.getByVehicle(vehicleId)
+        if (reminders.isNotEmpty()) {
+            evaluateReminders(vehicle, reminders, periodic = false, now = System.currentTimeMillis())
+        }
+    }
+
+    /** Dipanggil pekerja latar belakang. `now` bisa disuntik supaya mudah dites. */
+    suspend fun runPeriodicCheck(now: Long = System.currentTimeMillis()) {
+        for (vehicle in vehicleDao.getAll()) {
+            val reminders = reminderDao.getByVehicle(vehicle.id)
+            if (reminders.isEmpty()) continue // motor tanpa pengingat tidak perlu diganggu
+            evaluateReminders(vehicle, reminders, periodic = true, now = now)
+            checkStaleOdometer(vehicle, now)
+        }
+    }
+
+    private suspend fun evaluateReminders(
+        vehicle: Vehicle,
+        reminders: List<Reminder>,
+        periodic: Boolean,
+        now: Long
+    ) {
+        val avg = UsageEstimator.averageKmPerDay(observeUsagePoints(vehicle.id).first(), now)
+        for (r in reminders) {
+            val status = ReminderCalculator.status(r, vehicle.currentOdometer, now, avgKmPerDay = avg)
+            val decision =
+                if (periodic) ReminderNotificationPolicy.onPeriodicCheck(r, status.level, now)
+                else ReminderNotificationPolicy.onDataChanged(r, status.level, now)
             // Gagal tampil (mis. izin ditolak): jangan dicatat sebagai terkirim, biar dicoba lagi nanti
             if (decision.shouldNotify && !notifier.show(decision.updated, vehicle, status)) continue
             if (decision.updated != r) reminderDao.update(decision.updated)
             if (status.level == ReminderLevel.OK) notifier.cancel(r.id)
         }
+    }
+
+    private suspend fun checkStaleOdometer(vehicle: Vehicle, now: Long) {
+        if (!OdometerStalePolicy.shouldNotify(vehicle, now)) return
+        val days = OdometerStalePolicy.daysSinceUpdate(vehicle, now)
+        if (!notifier.showStaleOdometer(vehicle, days)) return
+        vehicleDao.setStaleNotified(vehicle.id, now, vehicle.staleNotifyCount + 1)
     }
 }
