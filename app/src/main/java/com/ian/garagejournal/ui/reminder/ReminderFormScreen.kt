@@ -1,5 +1,10 @@
 package com.ian.garagejournal.ui.reminder
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,8 +31,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ian.garagejournal.ui.components.LocalDatePickerDialog
 import com.ian.garagejournal.util.formatDate
@@ -38,7 +45,19 @@ fun ReminderFormScreen(viewModel: ReminderFormViewModel, onDone: () -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
 
-    LaunchedEffect(state.saved) { if (state.saved) onDone() }
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { onDone() } // hasilnya tidak perlu dicek: kalau ditolak, status di dalam app tetap jalan
+
+    LaunchedEffect(state.saved) {
+        if (!state.saved) return@LaunchedEffect
+        val needsPermission = !state.isEditing &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+        if (needsPermission) permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) else onDone()
+    }
 
     Scaffold(
         topBar = {
