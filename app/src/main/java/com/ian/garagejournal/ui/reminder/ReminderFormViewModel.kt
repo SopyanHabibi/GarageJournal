@@ -89,8 +89,14 @@ class ReminderFormViewModel(
         }
 
         viewModelScope.launch {
-            val reminder = Reminder(
-                id = original?.id ?: 0,
+            val base = original
+            val reminder = base?.copy(
+                name = name,
+                intervalKm = km,
+                intervalMonths = months,
+                lastDoneOdometer = lastOdo,
+                lastDoneDate = s.lastDoneDateMillis
+            ) ?: Reminder(
                 vehicleId = vehicleId,
                 name = name,
                 intervalKm = km,
@@ -98,8 +104,7 @@ class ReminderFormViewModel(
                 lastDoneOdometer = lastOdo,
                 lastDoneDate = s.lastDoneDateMillis
             )
-            if (original == null) repo.addReminder(reminder) else repo.updateReminder(reminder)
-            _state.update { it.copy(saved = true) }
+            if (base == null) repo.addReminder(reminder) else repo.updateReminder(reminder)
         }
     }
 
