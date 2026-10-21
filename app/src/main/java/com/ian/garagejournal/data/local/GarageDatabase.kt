@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [Vehicle::class, ServiceLog::class, FuelLog::class, Reminder::class],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class GarageDatabase : RoomDatabase() {
@@ -26,7 +26,7 @@ abstract class GarageDatabase : RoomDatabase() {
                     GarageDatabase::class.java,
                     "garage_journal.db"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .build().also { INSTANCE = it }
             }
     }
