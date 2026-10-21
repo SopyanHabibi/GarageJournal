@@ -8,6 +8,10 @@ interface ReminderNotifier {
     fun show(reminder: Reminder, vehicle: Vehicle, status: ReminderStatus): Boolean
     fun cancel(reminderId: Long)
 
+    /** Ajakan memperbarui odometer. @return true kalau benar-benar tampil. */
+    fun showStaleOdometer(vehicle: Vehicle, daysSinceUpdate: Int): Boolean = false
+    fun cancelStale(vehicleId: Long) {}
+
     companion object {
         val None: ReminderNotifier = object : ReminderNotifier {
             override fun show(reminder: Reminder, vehicle: Vehicle, status: ReminderStatus) = false

@@ -24,9 +24,23 @@ interface VehicleDao {
     @Delete
     suspend fun delete(vehicle: Vehicle)
 
-    // Odometer hanya naik, tidak boleh turun karena input log lama
-    @Query("UPDATE vehicles SET currentOdometer = :odo WHERE id = :id AND currentOdometer < :odo")
+    // Naik atau sama (konfirmasi angka yang sama): catat waktunya dan reset hitungan notifikasi "basi".
+    // Waktu diambil dari SQLite (detik x 1000).
+    @Query(
+        """
+        UPDATE vehicles SET currentOdometer = :odo,
+            odometerUpdatedAt = CAST(strftime('%s', 'now') AS INTEGER) * 1000,
+            staleNotifiedAt = 0, staleNotifyCount = 0
+        WHERE id = :id AND currentOdometer <= :odo
+        """
+    )
     suspend fun bumpOdometer(id: Long, odo: Int)
+
+    @Query("SELECT * FROM vehicles")
+    suspend fun getAll(): List<Vehicle>
+
+    @Query("UPDATE vehicles SET staleNotifiedAt = :at, staleNotifyCount = :count WHERE id = :id")
+    suspend fun setStaleNotified(id: Long, at: Long, count: Int)
 
     @Query("SELECT * FROM vehicles WHERE id = :id")
     suspend fun getById(id: Long): Vehicle?
@@ -45,6 +59,9 @@ interface ServiceLogDao {
 
     @Query("SELECT receiptPath FROM service_logs WHERE vehicleId = :vehicleId AND receiptPath IS NOT NULL")
     suspend fun getReceiptPaths(vehicleId: Long): List<String>
+
+    @Query("SELECT date, odometer FROM service_logs WHERE vehicleId = :vehicleId")
+    fun observeOdometerPoints(vehicleId: Long): Flow<List<OdometerPoint>>
 
     @Insert
     suspend fun insert(log: ServiceLog): Long
@@ -66,6 +83,9 @@ interface FuelLogDao {
 
     @Query("SELECT * FROM fuel_logs WHERE id = :id")
     suspend fun getById(id: Long): FuelLog?
+
+    @Query("SELECT date, odometer FROM fuel_logs WHERE vehicleId = :vehicleId")
+    fun observeOdometerPoints(vehicleId: Long): Flow<List<OdometerPoint>>
 
     @Insert
     suspend fun insert(log: FuelLog): Long

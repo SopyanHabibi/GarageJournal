@@ -7,11 +7,13 @@ import androidx.test.core.app.ApplicationProvider
 import com.ian.garagejournal.data.local.GarageDatabase
 import com.ian.garagejournal.data.local.MIGRATION_1_2
 import com.ian.garagejournal.data.local.MIGRATION_2_3
+import com.ian.garagejournal.data.local.MIGRATION_3_4
 import com.ian.garagejournal.data.local.Reminder
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,8 +87,24 @@ class MigrationTest {
         db.close()
     }
 
+    private fun createVersion3Database() {
+        val db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null)
+        createVersion1Tables(db)
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `reminders` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`vehicleId` INTEGER NOT NULL, `name` TEXT NOT NULL, `intervalKm` INTEGER, `intervalMonths` INTEGER, " +
+                    "`lastDoneOdometer` INTEGER NOT NULL, `lastDoneDate` INTEGER NOT NULL, " +
+                    "`lastNotifiedLevel` INTEGER NOT NULL DEFAULT 0, `lastNotifiedAt` INTEGER NOT NULL DEFAULT 0, " +
+                    "`notifyCount` INTEGER NOT NULL DEFAULT 0, `snoozedUntil` INTEGER NOT NULL DEFAULT 0, " +
+                    "FOREIGN KEY(`vehicleId`) REFERENCES `vehicles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_reminders_vehicleId` ON `reminders` (`vehicleId`)")
+        db.version = 3
+        db.close()
+    }
+
     private fun openLatest() = Room.databaseBuilder(context, GarageDatabase::class.java, dbName)
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
         .build()
 
     @Test
@@ -123,6 +141,21 @@ class MigrationTest {
             assertEquals(0, r.lastNotifiedLevel)
             assertEquals(0, r.notifyCount)
             assertEquals(0L, r.snoozedUntil)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `migrasi 3 ke 4 memberi masa tenggang odometer pada motor lama`() = runBlocking<Unit> {
+        val before = System.currentTimeMillis()
+        createVersion3Database()
+        val db = openLatest()
+        try {
+            val v = db.vehicleDao().getById(1)!!
+            assertEquals("Si Hitam", v.name)
+            assertTrue(v.odometerUpdatedAt >= before)
+            assertEquals(0, v.staleNotifyCount)
         } finally {
             db.close()
         }

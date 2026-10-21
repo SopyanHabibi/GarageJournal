@@ -46,6 +46,7 @@ fun VehicleDetailScreen(
 ) {
     val vehicle by viewModel.vehicle.collectAsStateWithLifecycle()
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
+    val avgKmPerDay by viewModel.avgKmPerDay.collectAsStateWithLifecycle()
     var toMarkDone by remember { mutableStateOf<ReminderWithStatus?>(null) }
     var toDelete by remember { mutableStateOf<ReminderWithStatus?>(null) }
 
@@ -77,6 +78,12 @@ fun VehicleDetailScreen(
                 Text("${v.brand} ${v.model} (${v.year})", style = MaterialTheme.typography.titleLarge)
                 Text("Plat: ${v.plateNumber}")
                 Text("Odometer: %,d km".format(v.currentOdometer))
+                avgKmPerDay?.let {
+                    Text(
+                        "Rata-rata pemakaian: ±${"%,.0f".format(it)} km/hari",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
 

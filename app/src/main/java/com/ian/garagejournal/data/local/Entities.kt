@@ -15,7 +15,11 @@ data class Vehicle(
     val year: Int,
     val plateNumber: String,
     val currentOdometer: Int,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    // --- pelacakan odometer basi ---
+    @ColumnInfo(defaultValue = "0") val odometerUpdatedAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(defaultValue = "0") val staleNotifiedAt: Long = 0,
+    @ColumnInfo(defaultValue = "0") val staleNotifyCount: Int = 0
 )
 
 @Entity(
