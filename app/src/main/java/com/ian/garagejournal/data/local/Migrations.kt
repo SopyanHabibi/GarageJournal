@@ -31,3 +31,13 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         db.execSQL("ALTER TABLE `reminders` ADD COLUMN `snoozedUntil` INTEGER NOT NULL DEFAULT 0")
     }
 }
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `vehicles` ADD COLUMN `odometerUpdatedAt` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `vehicles` ADD COLUMN `staleNotifiedAt` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `vehicles` ADD COLUMN `staleNotifyCount` INTEGER NOT NULL DEFAULT 0")
+        // Motor yang sudah ada dianggap baru diperbarui sekarang (masa tenggang), bukan "basi sejak 1970"
+        db.execSQL("UPDATE `vehicles` SET `odometerUpdatedAt` = ${System.currentTimeMillis()}")
+    }
+}
