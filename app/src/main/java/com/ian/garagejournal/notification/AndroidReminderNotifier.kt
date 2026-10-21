@@ -16,7 +16,7 @@ import com.ian.garagejournal.domain.ReminderLevel
 import com.ian.garagejournal.domain.ReminderNotifier
 import com.ian.garagejournal.domain.ReminderStatus
 import com.ian.garagejournal.domain.summaryText
-import kotlin.jvm.java
+import java.time.LocalTime
 
 class AndroidReminderNotifier(private val context: Context) : ReminderNotifier {
 
@@ -30,6 +30,11 @@ class AndroidReminderNotifier(private val context: Context) : ReminderNotifier {
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_OVERDUE, "Servis jatuh tempo", NotificationManager.IMPORTANCE_HIGH).apply {
                 description = "Pengingat saat jadwal servis sudah terlewati"
+            }
+        )
+        manager.createNotificationChannel(
+            NotificationChannel(CHANNEL_STALE, "Pengingat odometer", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Ajakan memperbarui odometer supaya pengingat servis tetap akurat"
             }
         )
     }
@@ -46,6 +51,7 @@ class AndroidReminderNotifier(private val context: Context) : ReminderNotifier {
             .setContentText("${vehicle.name} • ${status.summaryText()}")
             .setPriority(if (overdue) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setSilent(isQuietHours()) // malam hari: tanpa suara/getar
             .setAutoCancel(true)
             .setContentIntent(openAppIntent(reminder.id))
             .addAction(0, "Sudah diservis", actionIntent(ReminderActionReceiver.ACTION_DONE, reminder.id, 1))
@@ -60,12 +66,42 @@ class AndroidReminderNotifier(private val context: Context) : ReminderNotifier {
         NotificationManagerCompat.from(context).cancel(reminderId.toInt())
     }
 
-    private fun openAppIntent(reminderId: Long): PendingIntent {
+    @SuppressLint("MissingPermission")
+    override fun showStaleOdometer(vehicle: Vehicle, daysSinceUpdate: Int): Boolean {
+        val manager = NotificationManagerCompat.from(context)
+        if (!manager.areNotificationsEnabled()) return false
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_STALE)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("Odometer ${vehicle.name} belum diperbarui")
+            .setContentText("Sudah $daysSinceUpdate hari. Perbarui supaya pengingat servis tetap akurat.")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(openAppIntent(STALE_ID_BASE.toLong() + vehicle.id))
+            .build()
+
+        manager.notify(staleNotificationId(vehicle.id), notification)
+        return true
+    }
+
+    override fun cancelStale(vehicleId: Long) {
+        NotificationManagerCompat.from(context).cancel(staleNotificationId(vehicleId))
+    }
+
+    private fun isQuietHours(): Boolean {
+        val hour = LocalTime.now().hour
+        return hour >= 22 || hour < 6
+    }
+
+    private fun staleNotificationId(vehicleId: Long): Int = STALE_ID_BASE + vehicleId.toInt()
+
+    private fun openAppIntent(key: Long): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         return PendingIntent.getActivity(
-            context, requestCode(reminderId, 0), intent,
+            context, requestCode(key, 0), intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
     }
@@ -82,10 +118,12 @@ class AndroidReminderNotifier(private val context: Context) : ReminderNotifier {
     }
 
     // Kode unik per pengingat dan per tombol. Tanpa ini, tombol milik pengingat lain bisa tertukar.
-    private fun requestCode(reminderId: Long, slot: Int): Int = (reminderId * 4 + slot).toInt()
+    private fun requestCode(key: Long, slot: Int): Int = (key * 4 + slot).toInt()
 
     companion object {
         const val CHANNEL_SOON = "reminder_soon"
         const val CHANNEL_OVERDUE = "reminder_overdue"
+        const val CHANNEL_STALE = "odometer_stale"
+        private const val STALE_ID_BASE = 1_000_000 // supaya tidak bertabrakan dengan id pengingat
     }
 }

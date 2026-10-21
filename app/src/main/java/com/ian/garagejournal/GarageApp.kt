@@ -5,6 +5,7 @@ import com.ian.garagejournal.data.local.GarageDatabase
 import com.ian.garagejournal.data.local.ReceiptStorage
 import com.ian.garagejournal.data.repository.GarageRepository
 import com.ian.garagejournal.notification.AndroidReminderNotifier
+import com.ian.garagejournal.notification.ReminderScheduler
 
 class GarageApp : Application() {
     private val database by lazy { GarageDatabase.get(this) }
@@ -26,5 +27,6 @@ class GarageApp : Application() {
     override fun onCreate() {
         super.onCreate()
         reminderNotifier.createChannels()
+        ReminderScheduler.schedulePeriodic(this)
     }
 }
