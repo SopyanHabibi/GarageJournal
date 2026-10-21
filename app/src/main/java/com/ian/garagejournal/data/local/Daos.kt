@@ -27,6 +27,9 @@ interface VehicleDao {
     // Odometer hanya naik, tidak boleh turun karena input log lama
     @Query("UPDATE vehicles SET currentOdometer = :odo WHERE id = :id AND currentOdometer < :odo")
     suspend fun bumpOdometer(id: Long, odo: Int)
+
+    @Query("SELECT * FROM vehicles WHERE id = :id")
+    suspend fun getById(id: Long): Vehicle?
 }
 
 @Dao
@@ -102,4 +105,10 @@ interface ReminderDao {
         """
     )
     suspend fun markDone(id: Long, vehicleId: Long, odometer: Int, date: Long)
+
+    @Query("SELECT * FROM reminders WHERE vehicleId = :vehicleId")
+    suspend fun getByVehicle(vehicleId: Long): List<Reminder>
+
+    @Query("UPDATE reminders SET snoozedUntil = :until WHERE id = :id")
+    suspend fun setSnoozedUntil(id: Long, until: Long)
 }

@@ -22,3 +22,12 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_reminders_vehicleId` ON `reminders` (`vehicleId`)")
     }
 }
+
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `reminders` ADD COLUMN `lastNotifiedLevel` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `reminders` ADD COLUMN `lastNotifiedAt` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `reminders` ADD COLUMN `notifyCount` INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE `reminders` ADD COLUMN `snoozedUntil` INTEGER NOT NULL DEFAULT 0")
+    }
+}

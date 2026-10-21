@@ -1,5 +1,6 @@
 package com.ian.garagejournal.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -73,9 +74,14 @@ data class FuelLog(
 data class Reminder(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val vehicleId: Long,
-    val name: String,               // mis. "Ganti oli"
-    val intervalKm: Int?,           // null = tidak pakai interval jarak
-    val intervalMonths: Int?,       // null = tidak pakai interval waktu
-    val lastDoneOdometer: Int,      // odometer saat terakhir dilakukan
-    val lastDoneDate: Long          // epoch millis
+    val name: String,
+    val intervalKm: Int?,
+    val intervalMonths: Int?,
+    val lastDoneOdometer: Int,
+    val lastDoneDate: Long,
+    // --- status notifikasi ---
+    @ColumnInfo(defaultValue = "0") val lastNotifiedLevel: Int = 0, // kode ReminderLevel terakhir yang sudah dinotifikasi
+    @ColumnInfo(defaultValue = "0") val lastNotifiedAt: Long = 0,
+    @ColumnInfo(defaultValue = "0") val notifyCount: Int = 0,
+    @ColumnInfo(defaultValue = "0") val snoozedUntil: Long = 0
 )

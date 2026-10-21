@@ -1,10 +1,12 @@
 package com.ian.garagejournal.data
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.ian.garagejournal.data.local.GarageDatabase
 import com.ian.garagejournal.data.local.MIGRATION_1_2
+import com.ian.garagejournal.data.local.MIGRATION_2_3
 import com.ian.garagejournal.data.local.Reminder
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -31,8 +33,7 @@ class MigrationTest {
         context.deleteDatabase(dbName)
     }
 
-    private fun createVersion1Database() {
-        val db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null)
+    private fun createVersion1Tables(db: SQLiteDatabase) {
         db.execSQL(
             "CREATE TABLE IF NOT EXISTS `vehicles` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
                     "`name` TEXT NOT NULL, `brand` TEXT NOT NULL, `model` TEXT NOT NULL, `year` INTEGER NOT NULL, " +
@@ -54,26 +55,44 @@ class MigrationTest {
         )
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_fuel_logs_vehicleId` ON `fuel_logs` (`vehicleId`)")
 
-        db.execSQL(
-            "INSERT INTO vehicles VALUES (1, 'Si Hitam', 'Honda', 'Beat', 2020, 'BK 1234 XX', 10000, 0)"
-        )
-        db.execSQL(
-            "INSERT INTO service_logs VALUES (1, 1, 0, 9500, 'Ganti oli', '', 50000, NULL)"
-        )
-        db.execSQL(
-            "INSERT INTO fuel_logs VALUES (1, 1, 0, 9800, 3.5, 10000, 35000, 1, NULL)"
-        )
+        db.execSQL("INSERT INTO vehicles VALUES (1, 'Si Hitam', 'Honda', 'Beat', 2020, 'BK 1234 XX', 10000, 0)")
+        db.execSQL("INSERT INTO service_logs VALUES (1, 1, 0, 9500, 'Ganti oli', '', 50000, NULL)")
+        db.execSQL("INSERT INTO fuel_logs VALUES (1, 1, 0, 9800, 3.5, 10000, 35000, 1, NULL)")
+    }
+
+    private fun createVersion1Database() {
+        val db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null)
+        createVersion1Tables(db)
         db.version = 1
         db.close()
     }
 
-    @Test
-    fun `migrasi 1 ke 2 mempertahankan data lama dan menambah tabel reminders`() = runBlocking<Unit> {
-        createVersion1Database()
+    private fun createVersion2Database() {
+        val db = context.openOrCreateDatabase(dbName, Context.MODE_PRIVATE, null)
+        createVersion1Tables(db)
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `reminders` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`vehicleId` INTEGER NOT NULL, `name` TEXT NOT NULL, `intervalKm` INTEGER, `intervalMonths` INTEGER, " +
+                    "`lastDoneOdometer` INTEGER NOT NULL, `lastDoneDate` INTEGER NOT NULL, " +
+                    "FOREIGN KEY(`vehicleId`) REFERENCES `vehicles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_reminders_vehicleId` ON `reminders` (`vehicleId`)")
+        db.execSQL(
+            "INSERT INTO reminders (id, vehicleId, name, intervalKm, intervalMonths, lastDoneOdometer, lastDoneDate) " +
+                    "VALUES (1, 1, 'Ganti oli', 2000, NULL, 9500, 0)"
+        )
+        db.version = 2
+        db.close()
+    }
 
-        val db = Room.databaseBuilder(context, GarageDatabase::class.java, dbName)
-            .addMigrations(MIGRATION_1_2)
-            .build()
+    private fun openLatest() = Room.databaseBuilder(context, GarageDatabase::class.java, dbName)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+        .build()
+
+    @Test
+    fun `migrasi dari versi 1 sampai 3 mempertahankan data lama`() = runBlocking<Unit> {
+        createVersion1Database()
+        val db = openLatest()
         try {
             assertEquals("Si Hitam", db.vehicleDao().observeAll().first().single().name)
             assertEquals(1, db.serviceLogDao().observeByVehicle(1).first().size)
@@ -85,7 +104,25 @@ class MigrationTest {
                     lastDoneOdometer = 9_500, lastDoneDate = 0L
                 )
             )
-            assertEquals("Ganti oli", db.reminderDao().getById(id)!!.name)
+            val saved = db.reminderDao().getById(id)!!
+            assertEquals("Ganti oli", saved.name)
+            assertEquals(0, saved.lastNotifiedLevel)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `migrasi 2 ke 3 mempertahankan pengingat dan mengisi kolom notifikasi`() = runBlocking<Unit> {
+        createVersion2Database()
+        val db = openLatest()
+        try {
+            val r = db.reminderDao().getById(1)!!
+            assertEquals("Ganti oli", r.name)
+            assertEquals(9_500, r.lastDoneOdometer)
+            assertEquals(0, r.lastNotifiedLevel)
+            assertEquals(0, r.notifyCount)
+            assertEquals(0L, r.snoozedUntil)
         } finally {
             db.close()
         }
