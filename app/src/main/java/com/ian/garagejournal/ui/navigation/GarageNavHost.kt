@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.ian.garagejournal.data.local.ReceiptStorage
 import com.ian.garagejournal.data.repository.GarageRepository
+import com.ian.garagejournal.ui.backup.BackupViewModel
 import com.ian.garagejournal.ui.fuel.FuelFormScreen
 import com.ian.garagejournal.ui.fuel.FuelFormViewModel
 import com.ian.garagejournal.ui.fuel.FuelListScreen
@@ -38,7 +39,8 @@ fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) 
                 viewModel = viewModel(factory = VehicleListViewModel.factory(repository)),
                 onAdd = { navController.navigate(Routes.vehicleForm()) },
                 onOpen = { navController.navigate(Routes.vehicleDetail(it)) },
-                onEdit = { navController.navigate(Routes.vehicleForm(it)) }
+                onEdit = { navController.navigate(Routes.vehicleForm(it)) },
+                backupViewModel = viewModel(factory = BackupViewModel.Factory),
             )
         }
 
