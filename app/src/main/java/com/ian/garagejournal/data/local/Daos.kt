@@ -63,6 +63,9 @@ interface ServiceLogDao {
     @Query("SELECT date, odometer FROM service_logs WHERE vehicleId = :vehicleId")
     fun observeOdometerPoints(vehicleId: Long): Flow<List<OdometerPoint>>
 
+    @Query("SELECT * FROM service_logs ORDER BY id")
+    suspend fun getAll(): List<ServiceLog>
+
     @Insert
     suspend fun insert(log: ServiceLog): Long
 
@@ -87,6 +90,9 @@ interface FuelLogDao {
     @Query("SELECT date, odometer FROM fuel_logs WHERE vehicleId = :vehicleId")
     fun observeOdometerPoints(vehicleId: Long): Flow<List<OdometerPoint>>
 
+    @Query("SELECT * FROM fuel_logs ORDER BY id")
+    suspend fun getAll(): List<FuelLog>
+
     @Insert
     suspend fun insert(log: FuelLog): Long
 
@@ -107,6 +113,9 @@ interface ReminderDao {
 
     @Query("SELECT * FROM reminders WHERE id = :id")
     suspend fun getById(id: Long): Reminder?
+
+    @Query("SELECT * FROM reminders ORDER BY id")
+    suspend fun getAll(): List<Reminder>
 
     @Insert
     suspend fun insert(reminder: Reminder): Long
