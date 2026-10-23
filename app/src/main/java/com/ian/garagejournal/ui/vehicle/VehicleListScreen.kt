@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -44,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ian.garagejournal.data.backup.ExportSummary
+import com.ian.garagejournal.data.backup.ImportSummary
 import com.ian.garagejournal.data.backup.defaultBackupFileName
 import com.ian.garagejournal.data.local.Vehicle
 import com.ian.garagejournal.ui.backup.BackupState
@@ -62,23 +64,27 @@ fun VehicleListScreen(
     val backupState by backupViewModel.state.collectAsStateWithLifecycle()
     var toDelete by remember { mutableStateOf<Vehicle?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
+    var showImportInfo by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
     ) { uri -> if (uri != null) backupViewModel.export(uri) }
 
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri -> if (uri != null) backupViewModel.import(uri) }
+
     LaunchedEffect(backupState) {
-        when (val s = backupState) {
-            is BackupState.Done -> {
-                snackbarHostState.showSnackbar(s.summary.describe())
-                backupViewModel.dismiss()
-            }
-            is BackupState.Failed -> {
-                snackbarHostState.showSnackbar("Ekspor gagal: ${s.message}")
-                backupViewModel.dismiss()
-            }
-            else -> Unit
+        val message = when (val s = backupState) {
+            is BackupState.ExportDone -> s.summary.describe()
+            is BackupState.ImportDone -> s.summary.describe()
+            is BackupState.Failed -> s.message
+            else -> null
+        }
+        if (message != null) {
+            snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Long)
+            backupViewModel.dismiss()
         }
     }
 
@@ -91,12 +97,21 @@ fun VehicleListScreen(
                         Icon(Icons.Default.MoreVert, contentDescription = "Menu")
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        val idle = backupState !is BackupState.Running
                         DropdownMenuItem(
                             text = { Text("Ekspor data (ZIP)") },
-                            enabled = backupState !is BackupState.Running,
+                            enabled = idle,
                             onClick = {
                                 menuOpen = false
                                 exportLauncher.launch(defaultBackupFileName())
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Impor data (ZIP)") },
+                            enabled = idle,
+                            onClick = {
+                                menuOpen = false
+                                showImportInfo = true
                             }
                         )
                     }
@@ -136,6 +151,28 @@ fun VehicleListScreen(
         }
     }
 
+    if (showImportInfo) {
+        AlertDialog(
+            onDismissRequest = { showImportInfo = false },
+            title = { Text("Impor data dari backup") },
+            text = {
+                Text(
+                    "Pilih berkas ZIP hasil ekspor Garage Journal. Data dari backup akan DITAMBAHKAN ke app ini. " +
+                            "Motor yang plat nomornya sudah ada di app dilewati, jadi data yang sudah ada tidak diubah atau ditimpa."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showImportInfo = false
+                    importLauncher.launch(
+                        arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")
+                    )
+                }) { Text("Pilih berkas") }
+            },
+            dismissButton = { TextButton(onClick = { showImportInfo = false }) { Text("Batal") } }
+        )
+    }
+
     toDelete?.let { v ->
         AlertDialog(
             onDismissRequest = { toDelete = null },
@@ -153,6 +190,17 @@ private fun ExportSummary.describe(): String {
     val base = "Ekspor selesai: $vehicles motor, $serviceLogs servis, $fuelLogs BBM, " +
             "$reminders pengingat, $receipts foto nota"
     return if (missingReceipts > 0) "$base ($missingReceipts foto nota tidak ditemukan)" else base
+}
+
+private fun ImportSummary.describe(): String {
+    val parts = mutableListOf("$vehicles motor ditambahkan")
+    if (skippedVehicles > 0) parts += "$skippedVehicles dilewati karena sudah ada"
+    parts += "$serviceLogs servis"
+    parts += "$fuelLogs BBM"
+    parts += "$reminders pengingat"
+    parts += "$receipts foto nota"
+    if (missingReceipts > 0) parts += "$missingReceipts foto nota tidak ada di backup"
+    return "Impor selesai: " + parts.joinToString(", ")
 }
 
 @Composable
