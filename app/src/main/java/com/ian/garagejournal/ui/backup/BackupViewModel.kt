@@ -11,7 +11,10 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ian.garagejournal.GarageApp
 import com.ian.garagejournal.data.backup.BackupExporter
+import com.ian.garagejournal.data.backup.BackupFormatException
+import com.ian.garagejournal.data.backup.BackupImporter
 import com.ian.garagejournal.data.backup.ExportSummary
+import com.ian.garagejournal.data.backup.ImportSummary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,12 +26,14 @@ import kotlin.coroutines.cancellation.CancellationException
 sealed interface BackupState {
     data object Idle : BackupState
     data object Running : BackupState
-    data class Done(val summary: ExportSummary) : BackupState
+    data class ExportDone(val summary: ExportSummary) : BackupState
+    data class ImportDone(val summary: ImportSummary) : BackupState
     data class Failed(val message: String) : BackupState
 }
 
 class BackupViewModel(
     private val exporter: BackupExporter,
+    private val importer: BackupImporter,
     private val resolver: ContentResolver
 ) : ViewModel() {
 
@@ -36,7 +41,7 @@ class BackupViewModel(
     val state: StateFlow<BackupState> = _state.asStateFlow()
 
     fun export(uri: Uri) {
-        if (_state.value is BackupState.Running) return // cegah ekspor ganda
+        if (_state.value is BackupState.Running) return // cegah operasi ganda
         _state.value = BackupState.Running
 
         viewModelScope.launch {
@@ -46,12 +51,34 @@ class BackupViewModel(
                         ?: throw IllegalStateException("Tidak bisa menulis ke lokasi yang dipilih")
                     output.use { exporter.export(it) }
                 }
-                BackupState.Done(summary)
+                BackupState.ExportDone(summary)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 runCatching { DocumentsContract.deleteDocument(resolver, uri) } // buang berkas setengah jadi
-                BackupState.Failed(e.message ?: "kesalahan tidak diketahui")
+                BackupState.Failed("Ekspor gagal: ${e.message ?: "kesalahan tidak diketahui"}")
+            }
+        }
+    }
+
+    fun import(uri: Uri) {
+        if (_state.value is BackupState.Running) return
+        _state.value = BackupState.Running
+
+        viewModelScope.launch {
+            _state.value = try {
+                val summary = withContext(Dispatchers.IO) {
+                    val input = resolver.openInputStream(uri)
+                        ?: throw IllegalStateException("Tidak bisa membaca berkas yang dipilih")
+                    input.use { importer.import(it) }
+                }
+                BackupState.ImportDone(summary)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: BackupFormatException) {
+                BackupState.Failed("Impor gagal: ${e.message}")
+            } catch (e: Exception) {
+                BackupState.Failed("Impor gagal: ${e.message ?: "kesalahan tidak diketahui"}")
             }
         }
     }
@@ -64,7 +91,7 @@ class BackupViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as GarageApp
-                BackupViewModel(app.backupExporter, app.contentResolver)
+                BackupViewModel(app.backupExporter, app.backupImporter, app.contentResolver)
             }
         }
     }

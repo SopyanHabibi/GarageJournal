@@ -6,6 +6,7 @@ import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.InputStream
 import java.util.UUID
 
 class ReceiptStorage(private val context: Context) {
@@ -39,5 +40,18 @@ class ReceiptStorage(private val context: Context) {
     fun delete(fileName: String?) {
         if (fileName == null) return
         runCatching { resolve(fileName).delete() }
+    }
+
+    /** Salin gambar dari stream (mis. isi ZIP backup) ke penyimpanan app; kembalikan nama file baru. */
+    fun importStream(input: InputStream): String {
+        val name = newFileName()
+        val target = resolve(name)
+        try {
+            target.outputStream().use { input.copyTo(it) }
+        } catch (e: Exception) {
+            target.delete() // jangan tinggalkan berkas setengah jadi
+            throw e
+        }
+        return name
     }
 }
