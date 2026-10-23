@@ -82,7 +82,7 @@ This application strictly adheres to Google's recommended Modern Android Develop
 * [x] Multi-Vehicle CRUD Support
 * [x] Fuel Log & KM/L Calculator Logic
 * [x] Maintenance Log Tracking & Receipt Image Storage
-* [ ] Export Data to CSV / PDF
+* [x] Export / Restore Data to CSV
 * [x] Automated Service Reminders (`WorkManager`)
 
 ## Author
