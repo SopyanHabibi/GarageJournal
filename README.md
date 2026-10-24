@@ -7,10 +7,8 @@ Built with modern Android development standards, this project demonstrates robus
 
 ## App Screenshots
 
-| 01. Vehicle List | 02. Vehicle Detail | 03. Service Log | 04. Add Service Form | 
-| 05. Fuel Log | 06. Statistics |
-| :---: | :---: | :---: | :---: |
-| :---: | :---: |
+| 01. Vehicle List | 02. Vehicle Detail | 03. Service Log | 04. Add Service Form | 05. Fuel Log | 06. Statistics |
+| :---: | :---: | :---: | :---: | :---: | :---: |
 | <img src="docs/screenshots/vehicle-list-01.jpg" width="160"/> | <img src="docs/screenshots/vehicle-detail-02.jpg" width="160"/> | <img src="docs/screenshots/log-service-list-03.jpg" width="160"/> | <img src="docs/screenshots/log-service-form-04.jpg" width="160"/> | <img src="docs/screenshots/log-fuel-05.jpg" width="160"/> | <img src="docs/screenshots/statistics-06.jpg" width="160"/> |
 
 
