@@ -20,6 +20,8 @@ import com.ian.garagejournal.ui.service.ServiceFormScreen
 import com.ian.garagejournal.ui.service.ServiceFormViewModel
 import com.ian.garagejournal.ui.service.ServiceListScreen
 import com.ian.garagejournal.ui.service.ServiceListViewModel
+import com.ian.garagejournal.ui.stats.StatsScreen
+import com.ian.garagejournal.ui.stats.StatsViewModel
 import com.ian.garagejournal.ui.vehicle.VehicleDetailScreen
 import com.ian.garagejournal.ui.vehicle.VehicleDetailViewModel
 import com.ian.garagejournal.ui.vehicle.VehicleFormScreen
@@ -70,7 +72,8 @@ fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) 
                 onOpenServiceLog = { navController.navigate(Routes.serviceList(id)) },
                 onOpenFuelLog = { navController.navigate(Routes.fuelList(id)) },
                 onAddReminder = { navController.navigate(Routes.reminderForm(id)) },
-                onEditReminder = { reminderId -> navController.navigate(Routes.reminderForm(id, reminderId)) }
+                onEditReminder = { reminderId -> navController.navigate(Routes.reminderForm(id, reminderId)) },
+                onOpenStats = { navController.navigate(Routes.stats(id)) },
             )
         }
 
@@ -156,6 +159,16 @@ fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) 
                     factory = ReminderFormViewModel.factory(repository, vehicleId, reminderId)
                 ),
                 onDone = { navController.popBackStack() }
+            )
+        }
+        composable(
+            route = Routes.STATS,
+            arguments = listOf(navArgument("vehicleId") { type = NavType.LongType })
+        ) { entry ->
+            val vehicleId = entry.arguments?.getLong("vehicleId") ?: return@composable
+            StatsScreen(
+                viewModel = viewModel(factory = StatsViewModel.factory(repository, vehicleId)),
+                onBack = { navController.popBackStack() }
             )
         }
     }

@@ -9,6 +9,7 @@ object Routes {
     const val FUEL_LIST = "fuel_list/{vehicleId}"
     const val FUEL_FORM = "fuel_form/{vehicleId}?logId={logId}"
     const val REMINDER_FORM = "reminder_form/{vehicleId}?reminderId={reminderId}"
+    const val STATS = "stats/{vehicleId}"
 
 
     fun vehicleForm(id: Long? = null) =
@@ -24,4 +25,6 @@ object Routes {
     fun reminderForm(vehicleId: Long, reminderId: Long? = null) =
         if (reminderId == null) "reminder_form/$vehicleId"
         else "reminder_form/$vehicleId?reminderId=$reminderId"
+
+    fun stats(vehicleId: Long) = "stats/$vehicleId"
 }
