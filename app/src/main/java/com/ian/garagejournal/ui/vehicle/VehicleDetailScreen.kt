@@ -17,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,7 +43,8 @@ fun VehicleDetailScreen(
     onOpenServiceLog: () -> Unit,
     onOpenFuelLog: () -> Unit,
     onAddReminder: () -> Unit,
-    onEditReminder: (Long) -> Unit
+    onEditReminder: (Long) -> Unit,
+    onOpenStats: () -> Unit
 ) {
     val vehicle by viewModel.vehicle.collectAsStateWithLifecycle()
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
@@ -92,6 +94,9 @@ fun VehicleDetailScreen(
                 }
                 Button(onClick = onOpenFuelLog, modifier = Modifier.fillMaxWidth()) {
                     Text("Log BBM")
+                }
+                OutlinedButton(onClick = onOpenStats, modifier = Modifier.fillMaxWidth()) {
+                    Text("Statistik")
                 }
 
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
