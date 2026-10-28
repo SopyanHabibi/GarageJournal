@@ -34,6 +34,11 @@ private val StealthGarageDark = darkColorScheme(
     onError = OnError,
     errorContainer = Color(0xFF3D0000),
     onErrorContainer = ErrorRed,
+
+    tertiary = Amber,
+    onTertiary = OnAmber,
+    tertiaryContainer = Color(0xFF3D2800),
+    onTertiaryContainer = Amber,
 )
 
 @Composable

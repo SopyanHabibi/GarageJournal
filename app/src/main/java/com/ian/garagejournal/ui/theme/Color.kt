@@ -26,3 +26,8 @@ val OnError = Color(0xFF1A0000)
 // Secondary
 val Secondary = Color(0xFF8A9E5F)
 val OnSecondary = Color(0xFF1A2000)
+
+// Chart accents
+val Amber = Color(0xFFFFB74D)
+val Cyan = Color(0xFF4DD0E1)
+val OnAmber = Color(0xFF2B1800)
