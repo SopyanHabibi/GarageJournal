@@ -1,5 +1,10 @@
 package com.ian.garagejournal.ui.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -34,7 +39,34 @@ import com.ian.garagejournal.ui.vehicle.VehicleListViewModel
 fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = Routes.VEHICLE_LIST) {
+    NavHost(
+        navController = navController,
+        startDestination = Routes.VEHICLE_LIST,
+        enterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { it / 3 },
+                animationSpec = tween(280)
+            ) + fadeIn(animationSpec = tween(280))
+        },
+        exitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { -it / 3 },
+                animationSpec = tween(280)
+            ) + fadeOut(animationSpec = tween(200))
+        },
+        popEnterTransition = {
+            slideInHorizontally(
+                initialOffsetX = { -it / 3 },
+                animationSpec = tween(280)
+            ) + fadeIn(animationSpec = tween(280))
+        },
+        popExitTransition = {
+            slideOutHorizontally(
+                targetOffsetX = { it / 3 },
+                animationSpec = tween(280)
+            ) + fadeOut(animationSpec = tween(200))
+        }
+    ) {
 
         composable(Routes.VEHICLE_LIST) {
             VehicleListScreen(
