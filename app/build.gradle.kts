@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.coil.compose)
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.work.runtime)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)

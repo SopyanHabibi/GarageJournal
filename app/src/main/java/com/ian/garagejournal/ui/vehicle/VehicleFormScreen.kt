@@ -25,7 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ian.garagejournal.ui.vehicle.VehicleFormViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +54,7 @@ fun VehicleFormScreen(viewModel: VehicleFormViewModel, onDone: () -> Unit) {
         ) {
             OutlinedTextField(
                 value = state.name, onValueChange = viewModel::onNameChange,
-                label = { Text("Nama panggilan (mis. Si Hitam)") },
+                label = { Text("Nama panggilan (Opsional, mis. Si Hitam)") },
                 singleLine = true, modifier = Modifier.fillMaxWidth()
             )
             OutlinedTextField(
