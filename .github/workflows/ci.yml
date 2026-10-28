@@ -35,3 +35,6 @@ jobs:
 
       - name: Build APK debug
         run: ./gradlew assembleDebug
+
+      - name: Build release APK (unsigned in CI)
+        run: ./gradlew assembleRelease
