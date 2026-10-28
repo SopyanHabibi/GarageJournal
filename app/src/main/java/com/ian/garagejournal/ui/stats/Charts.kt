@@ -16,8 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -99,6 +101,24 @@ fun EfficiencyLineChart(
 
             fun yAt(v: Double): Float = (h * (1 - (v - low) / (high - low))).toFloat()
 
+            // Area gradient di bawah garis
+            val areaPath = Path()
+            points.forEachIndexed { i, p ->
+                val x = xAt(i, p.date)
+                val y = yAt(p.kmPerLiter)
+                if (i == 0) areaPath.moveTo(x, y) else areaPath.lineTo(x, y)
+            }
+            areaPath.lineTo(xAt(points.size - 1, points.last().date), h)
+            areaPath.lineTo(xAt(0, firstDate), h)
+            areaPath.close()
+
+            drawPath(
+                areaPath,
+                brush = Brush.verticalGradient(
+                    colors = listOf(lineColor.copy(alpha = 0.35f), Color.Transparent)
+                )
+            )
+
             average?.let {
                 val y = yAt(it)
                 drawLine(
@@ -108,18 +128,22 @@ fun EfficiencyLineChart(
                 )
             }
 
-            val path = Path()
+            val linePath = Path()
             points.forEachIndexed { i, p ->
                 val x = xAt(i, p.date)
                 val y = yAt(p.kmPerLiter)
-                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                if (i == 0) linePath.moveTo(x, y) else linePath.lineTo(x, y)
             }
             drawPath(
-                path, lineColor,
-                style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                linePath, lineColor,
+                style = Stroke(width = 2.5f.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
+
             points.forEachIndexed { i, p ->
-                drawCircle(lineColor, radius = 4.dp.toPx(), center = Offset(xAt(i, p.date), yAt(p.kmPerLiter)))
+                val center = Offset(xAt(i, p.date), yAt(p.kmPerLiter))
+                // glow halus di belakang titik
+                drawCircle(lineColor.copy(alpha = 0.25f), radius = 7.dp.toPx(), center = center)
+                drawCircle(lineColor, radius = 4.dp.toPx(), center = center)
             }
         }
 
@@ -166,6 +190,7 @@ fun MonthlyCostBarChart(data: List<MonthlyCost>, modifier: Modifier = Modifier) 
             val slot = size.width / data.size
             val barWidth = slot * 0.6f
             val h = size.height
+            val corner = CornerRadius(6.dp.toPx(), 6.dp.toPx())
 
             drawLine(gridColor, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx())
             drawLine(gridColor, Offset(0f, h), Offset(size.width, h), strokeWidth = 1.dp.toPx())
@@ -174,9 +199,34 @@ fun MonthlyCostBarChart(data: List<MonthlyCost>, modifier: Modifier = Modifier) 
                 val left = slot * i + (slot - barWidth) / 2f
                 val serviceH = h * (m.serviceCost.toFloat() / maxTotal)
                 val fuelH = h * (m.fuelCost.toFloat() / maxTotal)
-                // servis di bawah, BBM menumpuk di atasnya
-                drawRect(serviceColor, Offset(left, h - serviceH), Size(barWidth, serviceH))
-                drawRect(fuelColor, Offset(left, h - serviceH - fuelH), Size(barWidth, fuelH))
+
+                // servis di bawah — gradient amber
+                if (serviceH > 0f) {
+                    drawRoundRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(serviceColor, serviceColor.copy(alpha = 0.6f)),
+                            startY = h - serviceH,
+                            endY = h
+                        ),
+                        topLeft = Offset(left, h - serviceH),
+                        size = Size(barWidth, serviceH),
+                        cornerRadius = corner
+                    )
+                }
+
+                // BBM menumpuk di atasnya — gradient lime
+                if (fuelH > 0f) {
+                    drawRoundRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(fuelColor, fuelColor.copy(alpha = 0.6f)),
+                            startY = h - serviceH - fuelH,
+                            endY = h - serviceH
+                        ),
+                        topLeft = Offset(left, h - serviceH - fuelH),
+                        size = Size(barWidth, fuelH),
+                        cornerRadius = corner
+                    )
+                }
             }
         }
 

@@ -4,6 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import com.ian.garagejournal.notification.ReminderScheduler
 import com.ian.garagejournal.ui.navigation.GarageNavHost
 import com.ian.garagejournal.ui.theme.GarageJournalTheme
@@ -16,7 +20,12 @@ class MainActivity : ComponentActivity() {
         val app = application as GarageApp
         setContent {
             GarageJournalTheme {
-                GarageNavHost(app.repository, app.receiptStorage)
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    GarageNavHost(app.repository, app.receiptStorage)
+                }
             }
         }
     }
