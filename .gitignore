@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Keystore — JANGAN pernah commit ini
+*.jks
+*.keystore
+keystore.properties
+app/release/
