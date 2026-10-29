@@ -27,7 +27,6 @@ import com.ian.garagejournal.ui.service.ServiceListScreen
 import com.ian.garagejournal.ui.service.ServiceListViewModel
 import com.ian.garagejournal.ui.stats.StatsScreen
 import com.ian.garagejournal.ui.stats.StatsViewModel
-import com.ian.garagejournal.ui.vehicle.VehicleDetailScreen
 import com.ian.garagejournal.ui.vehicle.VehicleDetailViewModel
 import com.ian.garagejournal.ui.vehicle.VehicleFormScreen
 import com.ian.garagejournal.ui.vehicle.VehicleFormViewModel
@@ -71,10 +70,17 @@ fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) 
         composable(Routes.VEHICLE_LIST) {
             VehicleListScreen(
                 viewModel = viewModel(factory = VehicleListViewModel.factory(repository)),
-                onAdd = { navController.navigate(Routes.vehicleForm()) },
-                onOpen = { navController.navigate(Routes.vehicleDetail(it)) },
-                onEdit = { navController.navigate(Routes.vehicleForm(it)) },
                 backupViewModel = viewModel(factory = BackupViewModel.Factory),
+                repository = repository,
+                onAdd = { navController.navigate(Routes.vehicleForm()) },
+                onEditVehicle = { navController.navigate(Routes.vehicleForm(it)) },
+                onOpenServiceLog = { navController.navigate(Routes.serviceList(it)) },
+                onOpenFuelLog = { navController.navigate(Routes.fuelList(it)) },
+                onAddReminder = { navController.navigate(Routes.reminderForm(it)) },
+                onEditReminder = { vehicleId, reminderId ->
+                    navController.navigate(Routes.reminderForm(vehicleId, reminderId))
+                },
+                onOpenStats = { navController.navigate(Routes.stats(it)) },
             )
         }
 
@@ -89,23 +95,6 @@ fun GarageNavHost(repository: GarageRepository, receiptStorage: ReceiptStorage) 
             VehicleFormScreen(
                 viewModel = viewModel(factory = VehicleFormViewModel.factory(repository, id)),
                 onDone = { navController.popBackStack() }
-            )
-        }
-
-        composable(
-            route = Routes.VEHICLE_DETAIL,
-            arguments = listOf(navArgument("vehicleId") { type = NavType.LongType })
-        ) { entry ->
-            val id = entry.arguments?.getLong("vehicleId") ?: return@composable
-            VehicleDetailScreen(
-                viewModel = viewModel(factory = VehicleDetailViewModel.factory(repository, id)),
-                onBack = { navController.popBackStack() },
-                onEdit = { navController.navigate(Routes.vehicleForm(id)) },
-                onOpenServiceLog = { navController.navigate(Routes.serviceList(id)) },
-                onOpenFuelLog = { navController.navigate(Routes.fuelList(id)) },
-                onAddReminder = { navController.navigate(Routes.reminderForm(id)) },
-                onEditReminder = { reminderId -> navController.navigate(Routes.reminderForm(id, reminderId)) },
-                onOpenStats = { navController.navigate(Routes.stats(id)) },
             )
         }
 
