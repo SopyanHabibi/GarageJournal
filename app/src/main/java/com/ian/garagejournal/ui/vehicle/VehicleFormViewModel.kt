@@ -71,7 +71,6 @@ class VehicleFormViewModel(
         val maxYear = Year.now().value + 1
 
         val error = when {
-            s.name.isBlank() -> "Nama panggilan wajib diisi"
             s.brand.isBlank() -> "Merek wajib diisi"
             s.model.isBlank() -> "Model wajib diisi"
             year == null || year !in 1980..maxYear -> "Tahun tidak valid"

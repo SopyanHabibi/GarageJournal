@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ian.garagejournal.data.local.FuelLog
+import com.ian.garagejournal.data.local.PERTAMINA_FUEL_TYPES
 import com.ian.garagejournal.data.repository.GarageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +21,7 @@ data class FuelFormState(
     val odometer: String = "",
     val liters: String = "",
     val pricePerLiter: String = "",
+    val fuelTypeName: String = PERTAMINA_FUEL_TYPES.first().name,
     val isFullTank: Boolean = true,
     val isEditing: Boolean = false,
     val error: String? = null,
@@ -36,7 +38,7 @@ data class FuelFormState(
 class FuelFormViewModel(
     private val repo: GarageRepository,
     private val vehicleId: Long,
-    private val logId: Long // -1 = mode tambah
+    private val logId: Long
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(FuelFormState(isEditing = logId != -1L))
@@ -49,24 +51,29 @@ class FuelFormViewModel(
             if (logId != -1L) {
                 repo.getFuelLog(logId)?.let { log ->
                     original = log
+                    // Coba cocokkan harga ke nama BBM yang dikenal
+                    val matchedType = PERTAMINA_FUEL_TYPES.find { it.pricePerLiter == log.pricePerLiter }
                     _state.update {
                         it.copy(
                             dateMillis = log.date,
                             odometer = log.odometer.toString(),
                             liters = log.liters.toString(),
                             pricePerLiter = log.pricePerLiter.toString(),
+                            fuelTypeName = matchedType?.name ?: PERTAMINA_FUEL_TYPES.first().name,
                             isFullTank = log.isFullTank
                         )
                     }
                 }
             } else {
-                // Mode tambah: isi odometer dari data motor, harga dari pengisian terakhir
                 val vehicle = repo.observeVehicle(vehicleId).first()
                 val lastPrice = repo.observeFuelLogs(vehicleId).first().firstOrNull()?.pricePerLiter
+                val matchedType = PERTAMINA_FUEL_TYPES.find { it.pricePerLiter == lastPrice }
                 _state.update {
                     it.copy(
                         odometer = vehicle?.currentOdometer?.toString() ?: "",
-                        pricePerLiter = lastPrice?.toString() ?: ""
+                        pricePerLiter = lastPrice?.toString()
+                            ?: PERTAMINA_FUEL_TYPES.first().pricePerLiter.toString(),
+                        fuelTypeName = matchedType?.name ?: PERTAMINA_FUEL_TYPES.first().name
                     )
                 }
             }
@@ -79,7 +86,17 @@ class FuelFormViewModel(
     fun onPriceChange(v: String) = _state.update { it.copy(pricePerLiter = v.filter(Char::isDigit), error = null) }
     fun onFullTankChange(v: Boolean) = _state.update { it.copy(isFullTank = v) }
 
-    // Terima koma atau titik, maksimal satu pemisah desimal dan dua angka di belakangnya
+    fun onFuelTypeSelect(name: String) {
+        val type = PERTAMINA_FUEL_TYPES.find { it.name == name } ?: return
+        _state.update {
+            it.copy(
+                fuelTypeName = type.name,
+                pricePerLiter = type.pricePerLiter.toString(),
+                error = null
+            )
+        }
+    }
+
     private fun sanitizeDecimal(input: String): String {
         val sb = StringBuilder()
         var dotSeen = false
@@ -121,7 +138,8 @@ class FuelFormViewModel(
                 pricePerLiter = price,
                 totalCost = total,
                 isFullTank = s.isFullTank,
-                kmPerLiter = null // dihitung ulang oleh repository
+                kmPerLiter = null,
+                fuelTypeName = s.fuelTypeName
             )
             if (base == null) repo.addFuelLog(log) else repo.updateFuelLog(log)
             _state.update { it.copy(saved = true) }
