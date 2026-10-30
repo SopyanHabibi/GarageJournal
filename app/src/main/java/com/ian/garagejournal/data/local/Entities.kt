@@ -51,7 +51,7 @@ data class ServiceLog(
         childColumns = ["vehicleId"],
         onDelete = ForeignKey.CASCADE
     )],
-    indices = [Index("vehicleId")]
+    indices = [Index("vehicleId")],
 )
 data class FuelLog(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -62,7 +62,9 @@ data class FuelLog(
     val pricePerLiter: Long,
     val totalCost: Long,
     val isFullTank: Boolean,       // penting buat akurasi KM/L
-    val kmPerLiter: Double? = null // dihitung ulang otomatis oleh repository, jangan diisi manual
+    val kmPerLiter: Double? = null, // dihitung ulang otomatis oleh repository, jangan diisi manual
+    @ColumnInfo(defaultValue = "")
+    val fuelTypeName: String = ""
 )
 
 @Entity(
