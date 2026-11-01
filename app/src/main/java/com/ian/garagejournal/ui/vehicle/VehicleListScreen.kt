@@ -32,12 +32,13 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -118,13 +120,14 @@ fun VehicleListScreen(
         }
     }
 
-    val pagerState = rememberPagerState(pageCount = { vehicles.size })
+    val pagerState = rememberPagerState(pageCount = { maxOf(vehicles.size + 1, 1) })
     val currentVehicle = vehicles.getOrNull(pagerState.currentPage)
+    val isAddSlot = vehicles.isNotEmpty() && pagerState.currentPage == vehicles.size
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(currentVehicle?.displayName() ?: "Garage Journal") },
+                title = { Text(if (isAddSlot) "Garage Journal" else currentVehicle?.displayName() ?: "Garage Journal") },
                 actions = {
                     currentVehicle?.let { v ->
                         IconButton(onClick = { onEditVehicle(v.id) }) {
@@ -160,25 +163,89 @@ fun VehicleListScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = onAdd) {
-                Icon(Icons.Default.Add, contentDescription = "Tambah motor")
-            }
-        }
     ) { padding ->
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (backupState is BackupState.Running) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
             }
-            if (vehicles.isEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Belum ada motor. Tekan + untuk menambah.")
-                }
-            } else {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.weight(1f)
-                ) { page ->
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.weight(1f)
+            ) { page ->
+                if (vehicles.isEmpty() || page == vehicles.size) {
+                    // Empty state / Add slot
+                    val hasVehicles = vehicles.isNotEmpty()
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(0.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(120.dp)
+                                    .clip(RoundedCornerShape(28.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.TwoWheeler,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(56.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+
+                            Spacer(Modifier.height(24.dp))
+
+                            Text(
+                                if (hasVehicles) "Tambah Kendaraan" else "Your garage is empty",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(Modifier.height(8.dp))
+
+                            Text(
+                                if (hasVehicles)
+                                    "Punya motor lain? Catat semua kendaraanmu di satu tempat."
+                                else
+                                    "Belum ada kendaraan yang terdaftar. Yuk, tambahkan kendaraan pertamamu!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(Modifier.height(32.dp))
+
+                            ElevatedButton(
+                                onClick = onAdd,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(50.dp),
+                                colors = ButtonDefaults.elevatedButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Tambahkan Kendaraan", style = MaterialTheme.typography.labelLarge)
+                            }
+
+                            Spacer(Modifier.height(20.dp))
+
+                            Text(
+                                "Kelola servis · BBM · Riwayat kendaraan",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
                     val v = vehicles[page]
                     val detailViewModel = viewModel<VehicleDetailViewModel>(
                         key = "vehicle_detail_${v.id}",
@@ -193,24 +260,24 @@ fun VehicleListScreen(
                         onOpenStats = { onOpenStats(v.id) }
                     )
                 }
-
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    repeat(vehicles.size) { i ->
-                        val selected = i == pagerState.currentPage
-                        Box(
-                            Modifier
-                                .padding(horizontal = 4.dp)
-                                .size(if (selected) 10.dp else 8.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (selected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.outlineVariant
-                                )
-                        )
-                    }
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                val dotCount = if (vehicles.isEmpty()) 0 else vehicles.size + 1
+                repeat(dotCount) { i ->
+                    val selected = i == pagerState.currentPage
+                    Box(
+                        Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(if (selected) 10.dp else 8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outlineVariant
+                            )
+                    )
                 }
             }
         }
