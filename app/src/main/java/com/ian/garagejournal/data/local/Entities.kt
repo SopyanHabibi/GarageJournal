@@ -40,7 +40,9 @@ data class ServiceLog(
     val title: String,             // mis. "Ganti oli"
     val description: String = "",
     val cost: Long,                // rupiah, pakai Long biar aman
-    val receiptPath: String? = null // nama file nota di folder receipts
+    val receiptPath: String? = null, // nama file nota di folder receipts
+    @ColumnInfo(defaultValue = "LAINNYA")
+    val category: String = ServiceCategory.LAINNYA.name
 )
 
 @Entity(
