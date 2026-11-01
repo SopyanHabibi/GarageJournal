@@ -111,4 +111,22 @@ class ReminderCalculatorTest {
         val over = ReminderCalculator.status(reminder(), 12_500, day(2026, 1, 2), zone, avgKmPerDay = 100.0)
         assertNull(over.estimatedDays)
     }
+
+    @Test
+    fun `isDue bernilai true jika level DUE_SOON atau OVERDUE`() {
+        val okStatus = status(reminder(), odo = 10_500)
+        val okWithStatus = ReminderWithStatus(reminder(), okStatus)
+        org.junit.Assert.assertFalse(okStatus.isDue)
+        org.junit.Assert.assertFalse(okWithStatus.isDue)
+
+        val soonStatus = status(reminder(), odo = 11_850)
+        val soonWithStatus = ReminderWithStatus(reminder(), soonStatus)
+        org.junit.Assert.assertTrue(soonStatus.isDue)
+        org.junit.Assert.assertTrue(soonWithStatus.isDue)
+
+        val overdueStatus = status(reminder(), odo = 12_000)
+        val overdueWithStatus = ReminderWithStatus(reminder(), overdueStatus)
+        org.junit.Assert.assertTrue(overdueStatus.isDue)
+        org.junit.Assert.assertTrue(overdueWithStatus.isDue)
+    }
 }
