@@ -8,6 +8,8 @@ import com.ian.garagejournal.data.local.GarageDatabase
 import com.ian.garagejournal.data.local.MIGRATION_1_2
 import com.ian.garagejournal.data.local.MIGRATION_2_3
 import com.ian.garagejournal.data.local.MIGRATION_3_4
+import com.ian.garagejournal.data.local.MIGRATION_4_5
+import com.ian.garagejournal.data.local.MIGRATION_5_6
 import com.ian.garagejournal.data.local.Reminder
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -104,7 +106,10 @@ class MigrationTest {
     }
 
     private fun openLatest() = Room.databaseBuilder(context, GarageDatabase::class.java, dbName)
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        .addMigrations(
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
+            MIGRATION_4_5, MIGRATION_5_6
+        )
         .build()
 
     @Test

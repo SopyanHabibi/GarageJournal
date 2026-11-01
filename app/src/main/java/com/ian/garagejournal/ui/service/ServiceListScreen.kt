@@ -73,7 +73,7 @@ fun ServiceListScreen(
 
     // Group logs by "MMMM yyyy" (e.g. "Oktober 2026")
     val grouped = logs.groupBy { log ->
-        SimpleDateFormat("MMMM yyyy", Locale("id", "ID")).format(Date(log.date))
+        SimpleDateFormat("MMMM yyyy", Locale.forLanguageTag("id-ID")).format(Date(log.date))
     }
 
     Scaffold(

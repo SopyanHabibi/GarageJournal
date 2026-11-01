@@ -552,13 +552,13 @@ private fun VehicleDetailContent(
                     }
 
                     // CTA button
-                    androidx.compose.material3.ElevatedButton(
+                    ElevatedButton(
                         onClick = onAddReminder,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
                         shape = RoundedCornerShape(50.dp),
-                        colors = androidx.compose.material3.ButtonDefaults.elevatedButtonColors(
+                        colors = ButtonDefaults.elevatedButtonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         )

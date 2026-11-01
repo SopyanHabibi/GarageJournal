@@ -64,7 +64,7 @@ fun FuelListScreen(
     var toDelete by remember { mutableStateOf<FuelLog?>(null) }
 
     val grouped = logs.groupBy { log ->
-        SimpleDateFormat("MMMM yyyy", Locale("id", "ID")).format(Date(log.date))
+        SimpleDateFormat("MMMM yyyy", Locale.forLanguageTag("id-ID")).format(Date(log.date))
     }
 
     Scaffold(
