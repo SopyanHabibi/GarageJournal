@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ian.garagejournal.data.local.ReceiptStorage
 import com.ian.garagejournal.data.local.Reminder
+import com.ian.garagejournal.data.local.ServiceCategory
 import com.ian.garagejournal.data.local.ServiceLog
 import com.ian.garagejournal.data.repository.GarageRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +30,8 @@ data class ServiceFormState(
     val selectedReminderIds: Set<Long> = emptySet(),
     val isEditing: Boolean = false,
     val error: String? = null,
-    val saved: Boolean = false
+    val saved: Boolean = false,
+    val category: ServiceCategory = ServiceCategory.LAINNYA
 )
 
 class ServiceFormViewModel(
@@ -58,7 +60,10 @@ class ServiceFormViewModel(
                             odometer = log.odometer.toString(),
                             cost = log.cost.toString(),
                             description = log.description,
-                            receiptFileName = log.receiptPath
+                            receiptFileName = log.receiptPath,
+                            category = runCatching {
+                                ServiceCategory.valueOf(log.category)
+                            }.getOrDefault(ServiceCategory.LAINNYA),
                         )
                     }
                 }
@@ -78,6 +83,7 @@ class ServiceFormViewModel(
     fun onOdometerChange(v: String) = _state.update { it.copy(odometer = v.filter(Char::isDigit), error = null) }
     fun onCostChange(v: String) = _state.update { it.copy(cost = v.filter(Char::isDigit), error = null) }
     fun onDescriptionChange(v: String) = _state.update { it.copy(description = v) }
+    fun onCategoryChange(c: ServiceCategory) = _state.update { it.copy(category = c) }
     fun onReminderToggle(id: Long) = _state.update {
         val next = if (id in it.selectedReminderIds) it.selectedReminderIds - id else it.selectedReminderIds + id
         it.copy(selectedReminderIds = next)
@@ -143,7 +149,8 @@ class ServiceFormViewModel(
                 title = s.title.trim(),
                 description = s.description.trim(),
                 cost = cost!!,
-                receiptPath = s.receiptFileName
+                receiptPath = s.receiptFileName,
+                category = s.category.name
             )
             if (base == null) repo.addServiceLog(log, s.selectedReminderIds) else repo.updateServiceLog(log)
 

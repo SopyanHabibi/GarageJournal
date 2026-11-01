@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [Vehicle::class, ServiceLog::class, FuelLog::class, Reminder::class],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class GarageDatabase : RoomDatabase() {
@@ -29,6 +29,14 @@ abstract class GarageDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE service_logs ADD COLUMN category TEXT NOT NULL DEFAULT 'LAINNYA'"
+                )
+            }
+        }
+
         fun get(context: Context): GarageDatabase =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -36,7 +44,7 @@ abstract class GarageDatabase : RoomDatabase() {
                     GarageDatabase::class.java,
                     "garage_journal.db"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build().also { INSTANCE = it }
             }
     }
