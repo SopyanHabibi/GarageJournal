@@ -14,9 +14,16 @@ data class ReminderStatus(
     val daysRemaining: Int?,     // negatif = sudah lewat
     val progress: Float,         // 0..1 untuk progress bar
     val estimatedDays: Int? = null // perkiraan hari sampai batas km, dari rata-rata pemakaian
-)
+) {
+    val isDue: Boolean get() = level != ReminderLevel.OK
+}
 
-data class ReminderWithStatus(val reminder: Reminder, val status: ReminderStatus)
+data class ReminderWithStatus(
+    val reminder: Reminder,
+    val status: ReminderStatus
+) {
+    val isDue: Boolean get() = status.isDue
+}
 
 object ReminderCalculator {
     const val SOON_DAYS = 14
